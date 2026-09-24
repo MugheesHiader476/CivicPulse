@@ -11,14 +11,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List complaints */
-        get: operations["list_complaints"];
+        /** List Complaints */
+        get: operations["list_complaints_api_complaints_get"];
         put?: never;
-        /**
-         * Submit a complaint
-         * @description Validate, triage, persist. Rate limited per client IP.
-         */
-        post: operations["create_complaint"];
+        /** Create Complaint */
+        post: operations["create_complaint_api_complaints_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -32,8 +29,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get one complaint */
-        get: operations["get_complaint"];
+        /** Get Complaint */
+        get: operations["get_complaint_api_complaints__id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -55,11 +52,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /**
-         * Advance a complaint's status
-         * @description The server enforces the status state machine. An invalid transition returns 409 with a detail naming the attempted transition.
-         */
-        patch: operations["update_status"];
+        /** Update Status */
+        patch: operations["update_status_api_complaints__id__status_patch"];
         trace?: never;
     };
     "/api/stats": {
@@ -69,11 +63,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Aggregate counts
-         * @description Read-through Redis cache, TTL 30 s, invalidated on write.
-         */
-        get: operations["get_stats"];
+        /** Get Stats */
+        get: operations["get_stats_api_stats_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -89,11 +80,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Triage provider observability
-         * @description The active triage provider and the last 20 triage outcomes.
-         */
-        get: operations["get_providers"];
+        /** Get Providers */
+        get: operations["get_providers_api_meta_providers_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -109,8 +97,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Liveness - never touches the database */
-        get: operations["health"];
+        /** Health */
+        get: operations["health_health_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -126,8 +114,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Readiness - Postgres and Redis reachable */
-        get: operations["ready"];
+        /** Ready */
+        get: operations["ready_ready_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -143,8 +131,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Prometheus metrics */
-        get: operations["metrics"];
+        /** Metrics */
+        get: operations["metrics_metrics_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -162,31 +150,6 @@ export interface components {
          * @enum {string}
          */
         Category: "water" | "electricity" | "sanitation" | "roads" | "streetlights" | "other";
-        /**
-         * Priority
-         * @enum {string}
-         */
-        Priority: "high" | "normal" | "low";
-        /**
-         * Status
-         * @enum {string}
-         */
-        Status: "open" | "in_progress" | "resolved" | "rejected";
-        /** ComplaintCreate */
-        ComplaintCreate: {
-            /**
-             * Text
-             * @description Free-text complaint
-             */
-            text: string;
-            /** Location */
-            location: string;
-            /**
-             * Reporter Contact
-             * @default null
-             */
-            reporter_contact: string | null;
-        };
         /** Complaint */
         Complaint: {
             /**
@@ -205,14 +168,7 @@ export interface components {
             status: components["schemas"]["Status"];
             /** Ai Summary */
             ai_summary: string | null;
-            /**
-             * Triaged By
-             * @description Which provider produced the triage: llm:groq, llm:ollama, rules or rules:fallback
-             * @example llm:groq
-             * @example llm:ollama
-             * @example rules
-             * @example rules:fallback
-             */
+            /** Triaged By */
             triaged_by: string;
             /** Triage Latency Ms */
             triage_latency_ms: number | null;
@@ -227,6 +183,15 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ComplaintCreate */
+        ComplaintCreate: {
+            /** Text */
+            text: string;
+            /** Location */
+            location: string;
+            /** Reporter Contact */
+            reporter_contact?: string | null;
+        };
         /** ComplaintPage */
         ComplaintPage: {
             /** Items */
@@ -238,9 +203,48 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
-        /** StatusUpdate */
-        StatusUpdate: {
-            status: components["schemas"]["Status"];
+        /** ErrorResponse */
+        ErrorResponse: {
+            /** Detail */
+            detail: string;
+        };
+        /** FieldError */
+        FieldError: {
+            /** Field */
+            field: string;
+            /** Message */
+            message: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** Health */
+        Health: {
+            /** Status */
+            status: string;
+        };
+        /**
+         * Priority
+         * @enum {string}
+         */
+        Priority: "high" | "normal" | "low";
+        /** ProvidersMeta */
+        ProvidersMeta: {
+            /** Active Provider */
+            active_provider: string;
+            /** Recent */
+            recent: components["schemas"]["TriageOutcome"][];
+        };
+        /** Readiness */
+        Readiness: {
+            /** Status */
+            status: string;
+            /** Checks */
+            checks: {
+                [key: string]: string;
+            };
         };
         /** Stats */
         Stats: {
@@ -259,6 +263,15 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /**
+         * Status
+         * @enum {string}
+         */
+        Status: "open" | "in_progress" | "resolved" | "rejected";
+        /** StatusUpdate */
+        StatusUpdate: {
+            status: components["schemas"]["Status"];
+        };
         /** TriageOutcome */
         TriageOutcome: {
             /** Complaint Id */
@@ -269,36 +282,26 @@ export interface components {
             latency_ms: number;
             /** Fallback */
             fallback: boolean;
-            /**
-             * Error Class
-             * @default null
-             */
-            error_class: string | null;
+            /** Error Class */
+            error_class?: string | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
         };
-        /** ProvidersMeta */
-        ProvidersMeta: {
-            /**
-             * Active Provider
-             * @description Provider selected by TRIAGE_PROVIDER, e.g. llm:groq
-             */
-            active_provider: string;
-            /**
-             * Recent
-             * @description The last 20 triage outcomes, newest first
-             */
-            recent: components["schemas"]["TriageOutcome"][];
-        };
-        /** FieldError */
-        FieldError: {
-            /** Field */
-            field: string;
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
             /** Message */
-            message: string;
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
         /** ValidationErrorResponse */
         ValidationErrorResponse: {
@@ -307,38 +310,16 @@ export interface components {
             /** Errors */
             errors: components["schemas"]["FieldError"][];
         };
-        /** ErrorResponse */
-        ErrorResponse: {
-            /** Detail */
-            detail: string;
-        };
-        /** Health */
-        Health: {
-            /** Status */
-            status: string;
-        };
-        /** Readiness */
-        Readiness: {
-            /** Status */
-            status: string;
-            /** Checks */
-            checks: {
-                [key: string]: string;
-            };
-        };
     };
     responses: never;
-    parameters: {
-        /** @description Correlation id, propagated into every backend log line. Generated server-side when absent. */
-        RequestId: string;
-    };
+    parameters: never;
     requestBodies: never;
     headers: never;
     pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_complaints: {
+    list_complaints_api_complaints_get: {
         parameters: {
             query?: {
                 category?: components["schemas"]["Category"] | null;
@@ -347,16 +328,13 @@ export interface operations {
                 page?: number;
                 page_size?: number;
             };
-            header?: {
-                /** @description Correlation id, propagated into every backend log line. Generated server-side when absent. */
-                "X-Request-ID"?: components["parameters"]["RequestId"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description One page of complaints, newest first */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -365,7 +343,7 @@ export interface operations {
                     "application/json": components["schemas"]["ComplaintPage"];
                 };
             };
-            /** @description Invalid filter or pagination parameter */
+            /** @description Bad Request */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -374,15 +352,21 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    create_complaint: {
+    create_complaint_api_complaints_post: {
         parameters: {
             query?: never;
-            header?: {
-                /** @description Correlation id, propagated into every backend log line. Generated server-side when absent. */
-                "X-Request-ID"?: components["parameters"]["RequestId"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -392,7 +376,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created and triaged */
+            /** @description Successful Response */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -401,7 +385,7 @@ export interface operations {
                     "application/json": components["schemas"]["Complaint"];
                 };
             };
-            /** @description Field-level validation error */
+            /** @description Bad Request */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -410,11 +394,18 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded */
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
             429: {
                 headers: {
-                    /** @description Seconds until the caller may submit again */
-                    "Retry-After"?: number;
                     [name: string]: unknown;
                 };
                 content: {
@@ -423,13 +414,10 @@ export interface operations {
             };
         };
     };
-    get_complaint: {
+    get_complaint_api_complaints__id__get: {
         parameters: {
             query?: never;
-            header?: {
-                /** @description Correlation id, propagated into every backend log line. Generated server-side when absent. */
-                "X-Request-ID"?: components["parameters"]["RequestId"];
-            };
+            header?: never;
             path: {
                 id: string;
             };
@@ -437,7 +425,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The complaint */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -446,7 +434,16 @@ export interface operations {
                     "application/json": components["schemas"]["Complaint"];
                 };
             };
-            /** @description No complaint with this id */
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+            /** @description Not Found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -455,15 +452,21 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    update_status: {
+    update_status_api_complaints__id__status_patch: {
         parameters: {
             query?: never;
-            header?: {
-                /** @description Correlation id, propagated into every backend log line. Generated server-side when absent. */
-                "X-Request-ID"?: components["parameters"]["RequestId"];
-            };
+            header?: never;
             path: {
                 id: string;
             };
@@ -475,7 +478,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Updated complaint */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -484,7 +487,16 @@ export interface operations {
                     "application/json": components["schemas"]["Complaint"];
                 };
             };
-            /** @description No complaint with this id */
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+            /** @description Not Found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -493,7 +505,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid status transition */
+            /** @description Conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -502,24 +514,30 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    get_stats: {
+    get_stats_api_stats_get: {
         parameters: {
             query?: never;
-            header?: {
-                /** @description Correlation id, propagated into every backend log line. Generated server-side when absent. */
-                "X-Request-ID"?: components["parameters"]["RequestId"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Counts by category, priority and status */
+            /** @description Successful Response */
             200: {
                 headers: {
-                    /** @description Whether the response was served from the Redis cache */
+                    /** @description Redis cache state */
                     "X-Cache"?: "HIT" | "MISS";
                     [name: string]: unknown;
                 };
@@ -529,19 +547,16 @@ export interface operations {
             };
         };
     };
-    get_providers: {
+    get_providers_api_meta_providers_get: {
         parameters: {
             query?: never;
-            header?: {
-                /** @description Correlation id, propagated into every backend log line. Generated server-side when absent. */
-                "X-Request-ID"?: components["parameters"]["RequestId"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Provider status */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -552,7 +567,7 @@ export interface operations {
             };
         };
     };
-    health: {
+    health_health_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -561,7 +576,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Process is alive */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -572,7 +587,7 @@ export interface operations {
             };
         };
     };
-    ready: {
+    ready_ready_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -581,7 +596,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description All dependencies reachable */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -590,7 +605,7 @@ export interface operations {
                     "application/json": components["schemas"]["Readiness"];
                 };
             };
-            /** @description A dependency is unreachable */
+            /** @description Service Unavailable */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -601,7 +616,7 @@ export interface operations {
             };
         };
     };
-    metrics: {
+    metrics_metrics_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -610,7 +625,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Prometheus text exposition format */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;

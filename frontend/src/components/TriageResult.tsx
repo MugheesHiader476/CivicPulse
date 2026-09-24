@@ -99,7 +99,7 @@ export function TriageResult({
 
       <div className="row-actions">
         <Link className="btn btn-primary" to={`/complaints/${complaint.id}`}>
-          Track this complaint <ArrowRight size={18} aria-hidden="true" />
+          Open operator view <ArrowRight size={18} aria-hidden="true" />
         </Link>
         <button type="button" className="btn btn-ghost" onClick={onReset}>
           <Plus size={18} aria-hidden="true" /> Report another

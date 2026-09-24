@@ -2,111 +2,175 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CivicPulse API",
-    "version": "0.1.0",
-    "description": "Snapshot of the backend contract (assignment section 2.2). Regenerate from the running backend with: curl -s http://<backend>/openapi.json -o openapi/openapi.json && npm run gen:api"
+    "version": "0.1.0"
   },
   "paths": {
     "/api/complaints": {
       "post": {
-        "tags": ["complaints"],
-        "summary": "Submit a complaint",
-        "description": "Validate, triage, persist. Rate limited per client IP.",
-        "operationId": "create_complaint",
-        "parameters": [
-          { "$ref": "#/components/parameters/RequestId" }
-        ],
+        "summary": "Create Complaint",
+        "operationId": "create_complaint_api_complaints_post",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ComplaintCreate" }
+              "schema": {
+                "$ref": "#/components/schemas/ComplaintCreate"
+              }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Created and triaged",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Complaint" }
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
               }
             }
           },
           "400": {
-            "description": "Field-level validation error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ValidationErrorResponse" }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded",
-            "headers": {
-              "Retry-After": {
-                "description": "Seconds until the caller may submit again",
-                "schema": { "type": "integer" }
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
               }
             },
+            "description": "Bad Request"
+          },
+          "429": {
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
         }
       },
       "get": {
-        "tags": ["complaints"],
-        "summary": "List complaints",
-        "operationId": "list_complaints",
+        "summary": "List Complaints",
+        "operationId": "list_complaints_api_complaints_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "category",
             "in": "query",
             "required": false,
-            "schema": { "anyOf": [{ "$ref": "#/components/schemas/Category" }, { "type": "null" }] }
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Category"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
           },
           {
             "name": "priority",
             "in": "query",
             "required": false,
-            "schema": { "anyOf": [{ "$ref": "#/components/schemas/Priority" }, { "type": "null" }] }
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Priority"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
           },
           {
             "name": "status",
             "in": "query",
             "required": false,
-            "schema": { "anyOf": [{ "$ref": "#/components/schemas/Status" }, { "type": "null" }] }
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Status"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
           },
           {
             "name": "page",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
           },
           {
             "name": "page_size",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
-          },
-          { "$ref": "#/components/parameters/RequestId" }
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
         ],
         "responses": {
           "200": {
-            "description": "One page of complaints, newest first",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ComplaintPage" }
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintPage"
+                }
               }
             }
           },
           "400": {
-            "description": "Invalid filter or pagination parameter",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ValidationErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -115,32 +179,63 @@
     },
     "/api/complaints/{id}": {
       "get": {
-        "tags": ["complaints"],
-        "summary": "Get one complaint",
-        "operationId": "get_complaint",
+        "summary": "Get Complaint",
+        "operationId": "get_complaint_api_complaints__id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
-          },
-          { "$ref": "#/components/parameters/RequestId" }
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
         ],
         "responses": {
           "200": {
-            "description": "The complaint",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Complaint" }
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
               }
             }
           },
-          "404": {
-            "description": "No complaint with this id",
+          "400": {
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -149,49 +244,83 @@
     },
     "/api/complaints/{id}/status": {
       "patch": {
-        "tags": ["complaints"],
-        "summary": "Advance a complaint's status",
-        "description": "The server enforces the status state machine. An invalid transition returns 409 with a detail naming the attempted transition.",
-        "operationId": "update_status",
+        "summary": "Update Status",
+        "operationId": "update_status_api_complaints__id__status_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
-          },
-          { "$ref": "#/components/parameters/RequestId" }
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/StatusUpdate" }
+              "schema": {
+                "$ref": "#/components/schemas/StatusUpdate"
+              }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Updated complaint",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Complaint" }
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
           },
           "404": {
-            "description": "No complaint with this id",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
-            }
+            },
+            "description": "Not Found"
           },
           "409": {
-            "description": "Invalid status transition",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -200,25 +329,28 @@
     },
     "/api/stats": {
       "get": {
-        "tags": ["stats"],
-        "summary": "Aggregate counts",
-        "description": "Read-through Redis cache, TTL 30 s, invalidated on write.",
-        "operationId": "get_stats",
-        "parameters": [
-          { "$ref": "#/components/parameters/RequestId" }
-        ],
+        "summary": "Get Stats",
+        "operationId": "get_stats_api_stats_get",
         "responses": {
           "200": {
-            "description": "Counts by category, priority and status",
+            "description": "Successful Response",
             "headers": {
               "X-Cache": {
-                "description": "Whether the response was served from the Redis cache",
-                "schema": { "type": "string", "enum": ["HIT", "MISS"] }
+                "description": "Redis cache state",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "HIT",
+                    "MISS"
+                  ]
+                }
               }
             },
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Stats" }
+                "schema": {
+                  "$ref": "#/components/schemas/Stats"
+                }
               }
             }
           }
@@ -227,36 +359,39 @@
     },
     "/api/meta/providers": {
       "get": {
-        "tags": ["meta"],
-        "summary": "Triage provider observability",
-        "description": "The active triage provider and the last 20 triage outcomes.",
-        "operationId": "get_providers",
-        "parameters": [
-          { "$ref": "#/components/parameters/RequestId" }
-        ],
+        "summary": "Get Providers",
+        "operationId": "get_providers_api_meta_providers_get",
         "responses": {
           "200": {
-            "description": "Provider status",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ProvidersMeta" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProvidersMeta"
+                }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/health": {
       "get": {
-        "tags": ["ops"],
-        "summary": "Liveness - never touches the database",
-        "operationId": "health",
+        "summary": "Health",
+        "operationId": "health_health_get",
         "responses": {
           "200": {
-            "description": "Process is alive",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Health" }
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
               }
             }
           }
@@ -265,23 +400,26 @@
     },
     "/ready": {
       "get": {
-        "tags": ["ops"],
-        "summary": "Readiness - Postgres and Redis reachable",
-        "operationId": "ready",
+        "summary": "Ready",
+        "operationId": "ready_ready_get",
         "responses": {
           "200": {
-            "description": "All dependencies reachable",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Readiness" }
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
               }
             }
           },
           "503": {
-            "description": "A dependency is unreachable",
+            "description": "Service Unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Readiness" }
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
               }
             }
           }
@@ -290,15 +428,16 @@
     },
     "/metrics": {
       "get": {
-        "tags": ["ops"],
-        "summary": "Prometheus metrics",
-        "operationId": "metrics",
+        "summary": "Metrics",
+        "operationId": "metrics_metrics_get",
         "responses": {
           "200": {
-            "description": "Prometheus text exposition format",
+            "description": "Successful Response",
             "content": {
               "text/plain": {
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -307,59 +446,92 @@
     }
   },
   "components": {
-    "parameters": {
-      "RequestId": {
-        "name": "X-Request-ID",
-        "in": "header",
-        "required": false,
-        "description": "Correlation id, propagated into every backend log line. Generated server-side when absent.",
-        "schema": { "type": "string", "maxLength": 128 }
-      }
-    },
     "schemas": {
       "Category": {
         "type": "string",
-        "enum": ["water", "electricity", "sanitation", "roads", "streetlights", "other"],
+        "enum": [
+          "water",
+          "electricity",
+          "sanitation",
+          "roads",
+          "streetlights",
+          "other"
+        ],
         "title": "Category"
       },
-      "Priority": {
-        "type": "string",
-        "enum": ["high", "normal", "low"],
-        "title": "Priority"
-      },
-      "Status": {
-        "type": "string",
-        "enum": ["open", "in_progress", "resolved", "rejected"],
-        "title": "Status"
-      },
-      "ComplaintCreate": {
-        "type": "object",
-        "title": "ComplaintCreate",
-        "required": ["text", "location"],
+      "Complaint": {
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
           "text": {
             "type": "string",
-            "minLength": 10,
-            "maxLength": 2000,
-            "title": "Text",
-            "description": "Free-text complaint"
+            "title": "Text"
           },
           "location": {
             "type": "string",
-            "minLength": 3,
-            "maxLength": 200,
             "title": "Location"
           },
           "reporter_contact": {
-            "anyOf": [{ "type": "string", "maxLength": 200 }, { "type": "null" }],
-            "title": "Reporter Contact",
-            "default": null
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Contact"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "ai_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Summary"
+          },
+          "triaged_by": {
+            "type": "string",
+            "title": "Triaged By"
+          },
+          "triage_latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triage Latency Ms"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
           }
-        }
-      },
-      "Complaint": {
+        },
         "type": "object",
-        "title": "Complaint",
         "required": [
           "id",
           "text",
@@ -374,170 +546,361 @@
           "created_at",
           "updated_at"
         ],
+        "title": "Complaint"
+      },
+      "ComplaintCreate": {
         "properties": {
-          "id": { "type": "string", "format": "uuid", "title": "Id" },
-          "text": { "type": "string", "title": "Text" },
-          "location": { "type": "string", "title": "Location" },
-          "reporter_contact": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
-            "title": "Reporter Contact"
-          },
-          "category": { "$ref": "#/components/schemas/Category" },
-          "priority": { "$ref": "#/components/schemas/Priority" },
-          "status": { "$ref": "#/components/schemas/Status" },
-          "ai_summary": {
-            "anyOf": [{ "type": "string", "maxLength": 140 }, { "type": "null" }],
-            "title": "Ai Summary"
-          },
-          "triaged_by": {
+          "text": {
             "type": "string",
-            "title": "Triaged By",
-            "description": "Which provider produced the triage: llm:groq, llm:ollama, rules or rules:fallback",
-            "examples": ["llm:groq", "llm:ollama", "rules", "rules:fallback"]
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Text"
           },
-          "triage_latency_ms": {
-            "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }],
-            "title": "Triage Latency Ms"
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Location"
           },
-          "created_at": { "type": "string", "format": "date-time", "title": "Created At" },
-          "updated_at": { "type": "string", "format": "date-time", "title": "Updated At" }
-        }
+          "reporter_contact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Contact"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "location"
+        ],
+        "title": "ComplaintCreate"
       },
       "ComplaintPage": {
-        "type": "object",
-        "title": "ComplaintPage",
-        "required": ["items", "total", "page", "page_size"],
         "properties": {
           "items": {
+            "items": {
+              "$ref": "#/components/schemas/Complaint"
+            },
             "type": "array",
-            "items": { "$ref": "#/components/schemas/Complaint" },
             "title": "Items"
           },
-          "total": { "type": "integer", "minimum": 0, "title": "Total" },
-          "page": { "type": "integer", "minimum": 1, "title": "Page" },
-          "page_size": { "type": "integer", "minimum": 1, "maximum": 100, "title": "Page Size" }
-        }
-      },
-      "StatusUpdate": {
-        "type": "object",
-        "title": "StatusUpdate",
-        "required": ["status"],
-        "properties": {
-          "status": { "$ref": "#/components/schemas/Status" }
-        }
-      },
-      "Stats": {
-        "type": "object",
-        "title": "Stats",
-        "required": ["total", "by_category", "by_priority", "by_status"],
-        "properties": {
-          "total": { "type": "integer", "minimum": 0, "title": "Total" },
-          "by_category": {
-            "type": "object",
-            "additionalProperties": { "type": "integer" },
-            "title": "By Category"
+          "total": {
+            "type": "integer",
+            "title": "Total"
           },
-          "by_priority": {
-            "type": "object",
-            "additionalProperties": { "type": "integer" },
-            "title": "By Priority"
+          "page": {
+            "type": "integer",
+            "title": "Page"
           },
-          "by_status": {
-            "type": "object",
-            "additionalProperties": { "type": "integer" },
-            "title": "By Status"
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
           }
-        }
-      },
-      "TriageOutcome": {
+        },
         "type": "object",
-        "title": "TriageOutcome",
-        "required": ["complaint_id", "provider", "latency_ms", "fallback", "created_at"],
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "ComplaintPage"
+      },
+      "ErrorResponse": {
         "properties": {
-          "complaint_id": {
-            "anyOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }],
-            "title": "Complaint Id"
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse"
+      },
+      "FieldError": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
           },
-          "provider": { "type": "string", "title": "Provider" },
-          "latency_ms": { "type": "integer", "minimum": 0, "title": "Latency Ms" },
-          "fallback": { "type": "boolean", "title": "Fallback" },
-          "error_class": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
-            "title": "Error Class",
-            "default": null
-          },
-          "created_at": { "type": "string", "format": "date-time", "title": "Created At" }
-        }
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "FieldError"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "Health"
+      },
+      "Priority": {
+        "type": "string",
+        "enum": [
+          "high",
+          "normal",
+          "low"
+        ],
+        "title": "Priority"
       },
       "ProvidersMeta": {
-        "type": "object",
-        "title": "ProvidersMeta",
-        "required": ["active_provider", "recent"],
         "properties": {
           "active_provider": {
             "type": "string",
-            "title": "Active Provider",
-            "description": "Provider selected by TRIAGE_PROVIDER, e.g. llm:groq"
+            "title": "Active Provider"
           },
           "recent": {
+            "items": {
+              "$ref": "#/components/schemas/TriageOutcome"
+            },
             "type": "array",
-            "maxItems": 20,
-            "items": { "$ref": "#/components/schemas/TriageOutcome" },
-            "title": "Recent",
-            "description": "The last 20 triage outcomes, newest first"
+            "title": "Recent"
           }
-        }
-      },
-      "FieldError": {
+        },
         "type": "object",
-        "title": "FieldError",
-        "required": ["field", "message"],
-        "properties": {
-          "field": { "type": "string", "title": "Field" },
-          "message": { "type": "string", "title": "Message" }
-        }
-      },
-      "ValidationErrorResponse": {
-        "type": "object",
-        "title": "ValidationErrorResponse",
-        "required": ["detail", "errors"],
-        "properties": {
-          "detail": { "type": "string", "title": "Detail" },
-          "errors": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/FieldError" },
-            "title": "Errors"
-          }
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "title": "ErrorResponse",
-        "required": ["detail"],
-        "properties": {
-          "detail": { "type": "string", "title": "Detail" }
-        }
-      },
-      "Health": {
-        "type": "object",
-        "title": "Health",
-        "required": ["status"],
-        "properties": {
-          "status": { "type": "string", "title": "Status" }
-        }
+        "required": [
+          "active_provider",
+          "recent"
+        ],
+        "title": "ProvidersMeta"
       },
       "Readiness": {
-        "type": "object",
-        "title": "Readiness",
-        "required": ["status", "checks"],
         "properties": {
-          "status": { "type": "string", "title": "Status" },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
           "checks": {
+            "additionalProperties": {
+              "type": "string"
+            },
             "type": "object",
-            "additionalProperties": { "type": "string" },
             "title": "Checks"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "checks"
+        ],
+        "title": "Readiness"
+      },
+      "Stats": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "by_category": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Category"
+          },
+          "by_priority": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Priority"
+          },
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "by_category",
+          "by_priority",
+          "by_status"
+        ],
+        "title": "Stats"
+      },
+      "Status": {
+        "type": "string",
+        "enum": [
+          "open",
+          "in_progress",
+          "resolved",
+          "rejected"
+        ],
+        "title": "Status"
+      },
+      "StatusUpdate": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "StatusUpdate"
+      },
+      "TriageOutcome": {
+        "properties": {
+          "complaint_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complaint Id"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          },
+          "fallback": {
+            "type": "boolean",
+            "title": "Fallback"
+          },
+          "error_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Class"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "complaint_id",
+          "provider",
+          "latency_ms",
+          "fallback",
+          "created_at"
+        ],
+        "title": "TriageOutcome"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ValidationErrorResponse": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail",
+          "errors"
+        ],
+        "title": "ValidationErrorResponse"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

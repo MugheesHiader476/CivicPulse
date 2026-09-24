@@ -1,4 +1,5 @@
 import { newRequestId } from "../lib/requestId";
+import { getOperatorToken, isOperatorPath } from "./operator";
 
 /**
  * Transport layer: one fetch wrapper that every endpoint goes through.
@@ -99,6 +100,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   const headers: Record<string, string> = { Accept: "application/json", "X-Request-ID": requestId };
   if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (isOperatorPath(path, method) && getOperatorToken()) headers.Authorization = `Bearer ${getOperatorToken()}`;
 
   const started = performance.now();
   let response: Response;

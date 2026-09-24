@@ -2,9 +2,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router";
 import { ChartColumn, LayoutDashboard, Megaphone, Monitor, Moon, Sun } from "lucide-react";
 import { runtimeConfig } from "../config";
+import { ApiError } from "../api/http";
 import { useProviders } from "../lib/queries";
 import { applyThemePreference, nextThemePreference, readThemePreference, type ThemePreference } from "../lib/theme";
 import { PulseLogo } from "./Pulse";
+import { OperatorAccess } from "./OperatorAccess";
 
 const NAV = [
   { to: "/", label: "Report", icon: Megaphone, end: true },
@@ -17,9 +19,10 @@ function isDashboardPath(pathname: string): boolean {
 }
 
 function ProviderChip() {
-  const { data, isError, isPending } = useProviders();
+  const { data, isError, isPending, error } = useProviders();
+  const accessNeeded = error instanceof ApiError && error.status === 401;
   const state = isError ? "down" : isPending ? "pending" : "up";
-  const label = isError ? "API unreachable" : isPending ? "Connecting…" : data?.active_provider;
+  const label = accessNeeded ? "Operator access needed" : isError ? "API unreachable" : isPending ? "Connecting…" : data?.active_provider;
   return (
     <span className="provider-chip" data-state={state} title="Active triage provider, from /api/meta/providers">
       <span className="live-dot" aria-hidden="true" />
@@ -91,6 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {navLinks("top-link")}
           </nav>
           <div className="header-tools">
+            <OperatorAccess />
             <ProviderChip />
             <span className="env-badge" data-env={environment} title="Runtime environment, from /config.js">
               {environment}

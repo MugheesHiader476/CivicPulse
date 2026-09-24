@@ -906,3 +906,9 @@ img, svg { flex-shrink: 0; }
   .bar-fill, .stacked-seg, .latency-fill, .swatch, .status-dot { forced-color-adjust: none; }
   .card, .btn, .badge { border-color: CanvasText; }
 }
+
+/* Operator token is entered at runtime and kept in memory only. */
+.operator-access { display: flex; align-items: center; gap: 6px; }
+.operator-access input { width: 132px; min-width: 0; padding: 7px 9px; border: 2px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.78rem; }
+.operator-access input:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+@media (max-width: 800px) { .operator-access { flex-wrap: wrap; justify-content: flex-end; } .operator-access input { width: 112px; } }
