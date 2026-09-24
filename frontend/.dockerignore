@@ -1,0 +1,21 @@
+# Keep the build context small and free of anything secret or irrelevant to the bundle.
+.git
+.gitignore
+node_modules
+dist
+coverage
+.vite
+.env
+.env.*
+*.log
+npm-debug.log*
+.DS_Store
+.vscode
+.idea
+# Tests and their fixtures never ship
+tests
+**/*.test.ts
+**/*.test.tsx
+Dockerfile
+.dockerignore
+README.md
