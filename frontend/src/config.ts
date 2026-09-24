@@ -11,6 +11,8 @@ export interface RuntimeConfig {
   environment: string;
   /** Auto-refresh interval of the live dashboard, in seconds. */
   refreshSeconds: number;
+  /** Public Clerk application identifier, supplied at runtime; never a secret key. */
+  clerkPublishableKey: string;
 }
 
 declare global {
@@ -22,6 +24,7 @@ declare global {
 export const DEFAULT_CONFIG: RuntimeConfig = Object.freeze({
   environment: "unknown",
   refreshSeconds: 15,
+  clerkPublishableKey: "",
 });
 
 const MIN_REFRESH_SECONDS = 5;
@@ -43,7 +46,10 @@ export function readRuntimeConfig(source: unknown): RuntimeConfig {
     ? Math.min(MAX_REFRESH_SECONDS, Math.max(MIN_REFRESH_SECONDS, Math.round(seconds)))
     : DEFAULT_CONFIG.refreshSeconds;
 
-  return { environment, refreshSeconds };
+  const key = raw.clerkPublishableKey;
+  const clerkPublishableKey = typeof key === "string" && /^pk_(test|live)_[A-Za-z0-9_=-]+$/.test(key) ? key : "";
+
+  return { environment, refreshSeconds, clerkPublishableKey };
 }
 
 export const runtimeConfig: RuntimeConfig = readRuntimeConfig(

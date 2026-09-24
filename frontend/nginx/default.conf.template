@@ -29,7 +29,7 @@ server {
         default_type application/javascript;
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "no-store" always;
-        return 200 'window.__CIVICPULSE_CONFIG__ = Object.freeze({"environment":"${APP_ENV}","refreshSeconds":"${DASHBOARD_REFRESH_SECONDS}"});\n';
+        return 200 'window.__CIVICPULSE_CONFIG__ = Object.freeze({"environment":"${APP_ENV}","refreshSeconds":"${DASHBOARD_REFRESH_SECONDS}","clerkPublishableKey":"${CLERK_PUBLISHABLE_KEY}"});\n';
     }
 
     # Same-origin API: the browser calls /api/..., nginx forwards it unchanged. No CORS, no backend URL

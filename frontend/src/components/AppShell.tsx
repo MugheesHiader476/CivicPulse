@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { UserButton } from "@clerk/react";
 import { NavLink, useLocation } from "react-router";
 import { ChartColumn, LayoutDashboard, Megaphone, Monitor, Moon, Sun } from "lucide-react";
 import { runtimeConfig } from "../config";
@@ -6,7 +7,6 @@ import { ApiError } from "../api/http";
 import { useProviders } from "../lib/queries";
 import { applyThemePreference, nextThemePreference, readThemePreference, type ThemePreference } from "../lib/theme";
 import { PulseLogo } from "./Pulse";
-import { OperatorAccess } from "./OperatorAccess";
 
 const NAV = [
   { to: "/", label: "Report", icon: Megaphone, end: true },
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {navLinks("top-link")}
           </nav>
           <div className="header-tools">
-            <OperatorAccess />
+            {environment !== "mock-api" && <div className="user-control"><UserButton showName /></div>}
             <ProviderChip />
             <span className="env-badge" data-env={environment} title="Runtime environment, from /config.js">
               {environment}

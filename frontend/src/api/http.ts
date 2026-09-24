@@ -1,5 +1,5 @@
 import { newRequestId } from "../lib/requestId";
-import { getOperatorToken, isOperatorPath } from "./operator";
+import { getSessionToken } from "./auth";
 
 /**
  * Transport layer: one fetch wrapper that every endpoint goes through.
@@ -11,6 +11,7 @@ export type ApiErrorKind =
   | "network"
   | "timeout"
   | "validation"
+  | "unauthorized"
   | "not_found"
   | "conflict"
   | "rate_limited"
@@ -87,6 +88,15 @@ export function buildUrl(path: string, query?: Record<string, QueryValue>): stri
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
   const { method = "GET", query, body, signal, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
   const requestId = newRequestId();
+  let sessionToken: string | null;
+  try {
+    sessionToken = await getSessionToken();
+  } catch {
+    sessionToken = null;
+  }
+  if (!sessionToken) {
+    throw new ApiError({ kind: "unauthorized", status: 401, detail: "Sign in to continue.", requestId });
+  }
   const controller = new AbortController();
   let timedOut = false;
 
@@ -100,7 +110,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   const headers: Record<string, string> = { Accept: "application/json", "X-Request-ID": requestId };
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (isOperatorPath(path, method) && getOperatorToken()) headers.Authorization = `Bearer ${getOperatorToken()}`;
+  headers.Authorization = `Bearer ${sessionToken}`;
 
   const started = performance.now();
   let response: Response;
@@ -172,6 +182,7 @@ function parseJson(text: string): unknown {
 }
 
 function kindForStatus(status: number): ApiErrorKind {
+  if (status === 401) return "unauthorized";
   if (status === 400 || status === 422) return "validation";
   if (status === 404) return "not_found";
   if (status === 409) return "conflict";

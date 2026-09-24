@@ -1,10 +1,15 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router";
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/jetbrains-mono";
 import "./styles/app.css";
+import "./styles/auth.css";
 import { App } from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ClerkRoot } from "./ClerkRoot";
+
+const mockAuth = import.meta.env.DEV && import.meta.env.MODE === "mock";
 
 function render() {
   const container = document.getElementById("root");
@@ -12,15 +17,16 @@ function render() {
   createRoot(container).render(
     <StrictMode>
       <ErrorBoundary>
-        <App />
+        <BrowserRouter>
+          {mockAuth ? <App mockAuth /> : <ClerkRoot />}
+        </BrowserRouter>
       </ErrorBoundary>
     </StrictMode>,
   );
 }
 
-// `npm run dev:mock` swaps the network for an in-browser fake backend so the UI can be explored without
-// the API. The condition is false in every production build, so the mock is never bundled.
-if (import.meta.env.DEV && import.meta.env.MODE === "mock") {
+// The mock backend is available only in development. It never ships in a production bundle.
+if (mockAuth) {
   void import("./mocks/install").then(({ installMockApi }) => {
     installMockApi();
     render();
