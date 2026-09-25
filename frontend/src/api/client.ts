@@ -24,7 +24,9 @@ export type ComplaintPage = Schemas["ComplaintPage"];
 export type Stats = Schemas["Stats"];
 export type ProvidersMeta = Schemas["ProvidersMeta"];
 export type TriageOutcome = Schemas["TriageOutcome"];
+export type CurrentUser = Schemas["CurrentUser"];
 export type ListComplaintsQuery = NonNullable<paths["/api/complaints"]["get"]["parameters"]["query"]>;
+export type ProviderChoice = Schemas["ProviderSelection"]["provider"];
 
 /** Enum values as runtime arrays, generated from the schema - never hand-maintained. */
 export const CATEGORIES: readonly Category[] = categoryValues;
@@ -35,6 +37,7 @@ export type CacheStatus = (typeof pathsApiStatsGetResponses200HeadersXCacheValue
 
 // `satisfies` makes the compiler check each path against the generated `paths` interface.
 const PATHS = {
+  me: "/api/me",
   complaints: "/api/complaints",
   complaint: "/api/complaints/{id}",
   complaintStatus: "/api/complaints/{id}/status",
@@ -53,6 +56,11 @@ export interface CreatedComplaint {
   complaint: Complaint;
   elapsedMs: number;
   requestId: string;
+}
+
+export async function getCurrentUser(signal?: AbortSignal): Promise<CurrentUser> {
+  const res = await apiRequest<CurrentUser>(PATHS.me, { signal });
+  return res.data;
 }
 
 export async function createComplaint(body: ComplaintCreate): Promise<CreatedComplaint> {
@@ -104,6 +112,12 @@ export async function getStats(signal?: AbortSignal): Promise<StatsResult> {
 
 export async function getProviders(signal?: AbortSignal): Promise<ProvidersMeta> {
   const res = await apiRequest<ProvidersMeta>(PATHS.providers, { signal });
+  return res.data;
+}
+
+export async function chooseProvider(provider: ProviderChoice): Promise<ProvidersMeta> {
+  const body: Schemas["ProviderSelection"] = { provider };
+  const res = await apiRequest<ProvidersMeta>(PATHS.providers, { method: "PUT", body });
   return res.data;
 }
 

@@ -66,7 +66,7 @@ export interface ApiResponse<T> {
 export type QueryValue = string | number | null | undefined;
 
 export interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "PUT";
   query?: Record<string, QueryValue>;
   body?: unknown;
   signal?: AbortSignal;

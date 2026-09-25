@@ -5,10 +5,38 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/me": {
+      "get": {
+        "summary": "Current User",
+        "operationId": "current_user_api_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/complaints": {
       "post": {
         "summary": "Create Complaint",
         "operationId": "create_complaint_api_complaints_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -354,7 +382,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/meta/providers": {
@@ -368,6 +401,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProvidersMeta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Choose Provider",
+        "operationId": "choose_provider_api_meta_providers_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProvidersMeta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -614,6 +698,23 @@
         ],
         "title": "ComplaintPage"
       },
+      "CurrentUser": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "citizen",
+              "operator"
+            ],
+            "title": "Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "CurrentUser"
+      },
       "ErrorResponse": {
         "properties": {
           "detail": {
@@ -680,11 +781,99 @@
         ],
         "title": "Priority"
       },
+      "ProviderOption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "groq",
+              "ollama"
+            ],
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "location": {
+            "type": "string",
+            "enum": [
+              "hosted",
+              "local"
+            ],
+            "title": "Location"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "model",
+          "location",
+          "available"
+        ],
+        "title": "ProviderOption"
+      },
+      "ProviderSelection": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "groq",
+              "ollama"
+            ],
+            "title": "Provider"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "provider"
+        ],
+        "title": "ProviderSelection"
+      },
       "ProvidersMeta": {
         "properties": {
           "active_provider": {
             "type": "string",
             "title": "Active Provider"
+          },
+          "selected_provider": {
+            "type": "string",
+            "enum": [
+              "groq",
+              "ollama",
+              "rules",
+              "simulated"
+            ],
+            "title": "Selected Provider",
+            "default": "rules"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderOption"
+            },
+            "type": "array",
+            "title": "Options"
           },
           "recent": {
             "items": {

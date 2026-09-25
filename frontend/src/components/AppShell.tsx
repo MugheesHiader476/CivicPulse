@@ -20,7 +20,7 @@ function isDashboardPath(pathname: string): boolean {
 
 function ProviderChip() {
   const { data, isError, isPending, error } = useProviders();
-  const accessNeeded = error instanceof ApiError && error.status === 401;
+  const accessNeeded = error instanceof ApiError && (error.status === 401 || error.status === 403);
   const state = isError ? "down" : isPending ? "pending" : "up";
   const label = accessNeeded ? "Operator access needed" : isError ? "API unreachable" : isPending ? "Connecting…" : data?.active_provider;
   return (
@@ -54,7 +54,7 @@ function ThemeToggle() {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, isOperator }: { children: ReactNode; isOperator: boolean }) {
   const { pathname } = useLocation();
   const environment = runtimeConfig.environment;
 
@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   const navLinks = (className: string) =>
-    NAV.map(({ to, label, icon: Icon, end }) => (
+    NAV.filter(({ to }) => isOperator || to !== "/dashboard").map(({ to, label, icon: Icon, end }) => (
       <NavLink
         key={to}
         to={to}
@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
           <div className="header-tools">
             {environment !== "mock-api" && <div className="user-control"><UserButton showName /></div>}
-            <ProviderChip />
+            {isOperator && <ProviderChip />}
             <span className="env-badge" data-env={environment} title="Runtime environment, from /config.js">
               {environment}
             </span>

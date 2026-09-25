@@ -40,11 +40,12 @@ export function useComplaint(id: string) {
   });
 }
 
-export function useProviders(refetchInterval: number | false = 30_000) {
+export function useProviders(refetchInterval: number | false = 30_000, enabled = true) {
   return useQuery({
     queryKey: queryKeys.providers,
     queryFn: ({ signal }) => getProviders(signal),
     refetchInterval,
+    enabled,
   });
 }
 

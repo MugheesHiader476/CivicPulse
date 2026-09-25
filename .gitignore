@@ -1,0 +1,8 @@
+.env
+.civic/
+__pycache__/
+.pytest_cache/
+*.pyc
+.coverage
+.mypy_cache/
+.ruff_cache/

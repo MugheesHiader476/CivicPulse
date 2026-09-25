@@ -1,18 +1,20 @@
 # CivicPulse - frontend
 
 React 18 + Vite + TypeScript, served by nginx from a multi-stage image (assignment section 2.1).
-Three views: **Report** (submit), **Dashboard** (paginated, filterable board with status changes) and
-**Stats** (aggregates, X-Cache state and the triage pipeline), plus a complaint detail page.
+Three views: **Report** (submit), **Dashboard** (operator-only, paginated board with status changes) and
+**Stats** (aggregates and X-Cache state; operators also see the triage pipeline), plus an operator complaint detail page.
 
 ## Run it
 
 ```bash
 npm ci
 npm run dev:mock      # full UI against an in-browser fake backend - no API needed
-npm run dev           # against a real backend; /api is proxied to CIVICPULSE_API_TARGET (default http://127.0.0.1:8000)
+npm run dev           # real backend; requires frontend/.env.local with VITE_CLERK_PUBLISHABLE_KEY
 ```
 
-Open http://localhost:5173. In mock mode the header shows a pink **MOCK-API** badge.
+For real-backend development, `/api` is proxied to `CIVICPULSE_API_TARGET` (default
+`http://127.0.0.1:8000`), and the backend needs the matching Clerk secret key. Open
+http://localhost:5173. In mock mode the header shows a pink **MOCK-API** badge.
 
 | Script | What it does |
 |---|---|
@@ -22,12 +24,18 @@ Open http://localhost:5173. In mock mode the header shows a pink **MOCK-API** ba
 | `npm run build` | Type-check, then bundle to `dist/` |
 | `npm run gen:api` | Regenerate `src/api/schema.gen.ts` from `openapi/openapi.json` |
 
+## Choosing a triage provider
+
+Signed-in operators can choose Groq cloud or local Ollama on the Stats page. The UI reads
+availability and model names from the backend; it never receives the Groq API key.
+
+
 ## Container
 
-```bash
-docker build -t civicpulse-frontend .
-docker run --rm -p 8080:8080 -e API_UPSTREAM=http://backend:8000 -e APP_ENV=staging civicpulse-frontend
-```
+Use `bash scripts/dev-up.sh` from the repository root to build and run the connected
+frontend, backend, database, and Redis services. The frontend container needs the public
+`CLERK_PUBLISHABLE_KEY` and exact `CLERK_FRONTEND_API_ORIGIN`; the script derives the latter
+from the publishable key. Standalone `docker run` also needs a reachable `API_UPSTREAM`.
 
 - **Build stage:** `node:22.20.0-alpine3.22`, `npm ci` before `COPY . .` so the dependency layer is cached.
 - **Runtime stage:** `nginx:1.27.5-alpine3.21`, runs as the unprivileged `nginx` user on port 8080, `HEALTHCHECK` on
@@ -40,6 +48,8 @@ docker run --rm -p 8080:8080 -e API_UPSTREAM=http://backend:8000 -e APP_ENV=stag
 | `API_UPSTREAM` | `http://backend:8000` | Where nginx proxies `/api`. On Kubernetes use the FQDN `http://backend.civicpulse.svc.cluster.local:8000` |
 | `APP_ENV` | `production` | Environment label shown in the header |
 | `DASHBOARD_REFRESH_SECONDS` | `15` | Live dashboard polling interval (clamped 5-300) |
+| `CLERK_PUBLISHABLE_KEY` | required | Public Clerk application key, delivered via `/config.js` |
+| `CLERK_FRONTEND_API_ORIGIN` | required | Exact Clerk Frontend API origin allowed by nginx CSP |
 
 ## Design decisions
 
@@ -83,7 +93,7 @@ documented to do at that point (10 s LLM timeout, one retry, rule-based fallback
 
 **Security.**
 - No secrets anywhere in the bundle.
-- A strict CSP (`script-src 'self'`, `connect-src 'self'`, no inline scripts: the theme script is a file in `public/`).
+- A CSP allows this Clerk instance's exact Frontend API origin, Clerk's image and protection hosts, and Cloudflare challenges. It keeps inline scripts blocked; the theme script is a file in `public/`.
 - `nosniff`, `frame-ancestors 'none'`, and a non-root container.
 
 **Accessibility & responsiveness.**
@@ -97,7 +107,7 @@ documented to do at that point (10 s LLM timeout, one retry, rule-based fallback
 
 ## Tests (Vitest + Testing Library)
 
-`tests/` holds 27 tests; component tests cover:
+`tests/` covers these component and transport behaviors:
 
 - Submit: client validation blocks the request; trimmed payload plus `X-Request-ID`; category, priority, AI summary
   and provider rendered; fallback explained; honest loading state; server 400 errors mapped to fields; 429

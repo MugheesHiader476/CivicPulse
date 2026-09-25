@@ -3,6 +3,7 @@ import { Activity, CircleDot, Flame, Inbox, LifeBuoy, Timer } from "lucide-react
 import { CATEGORIES, PRIORITIES, STATUSES, type ProvidersMeta, type Stats } from "../api/client";
 import { CachePanel } from "../components/CachePanel";
 import { BarList, Donut, LatencyStrip, StackedBar, TableView, type Datum } from "../components/Charts";
+import { ProviderSelector } from "../components/ProviderSelector";
 import { ErrorNotice } from "../components/ErrorNotice";
 import { formatMs, formatPercent } from "../lib/format";
 import { useDocumentTitle } from "../lib/hooks";
@@ -81,10 +82,10 @@ function PipelinePanel({ meta }: { meta: ProvidersMeta }) {
   );
 }
 
-export function StatsPage() {
+export function StatsPage({ isOperator = true }: { isOperator?: boolean }) {
   useDocumentTitle("City stats");
   const stats = useStats();
-  const providers = useProviders();
+  const providers = useProviders(30_000, isOperator);
   const result = stats.data;
 
   return (
@@ -118,8 +119,9 @@ export function StatsPage() {
         />
       )}
 
-      {providers.data && <PipelinePanel meta={providers.data} />}
-      {providers.isError && (
+      {isOperator && providers.data && <PipelinePanel meta={providers.data} />}
+      {isOperator && providers.data && <ProviderSelector meta={providers.data} />}
+      {isOperator && providers.isError && (
         <ErrorNotice error={providers.error} title="Could not load triage provider status" onRetry={() => void providers.refetch()} />
       )}
     </div>

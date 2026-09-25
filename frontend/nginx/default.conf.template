@@ -3,6 +3,7 @@
 #   ${API_UPSTREAM}              backend base URL, e.g. http://backend:8000
 #   ${APP_ENV}                   environment label for the UI
 #   ${DASHBOARD_REFRESH_SECONDS} live dashboard polling interval
+#   ${CLERK_FRONTEND_API_ORIGIN} exact Clerk frontend API origin for CSP
 #   ${NGINX_LOCAL_RESOLVERS}     DNS servers from /etc/resolv.conf (set by the entrypoint)
 
 server {
@@ -14,6 +15,7 @@ server {
     # backend container with a new IP is picked up and nginx starts even before the backend exists.
     resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=off;
     resolver_timeout 5s;
+    set $clerk_fapi_origin "${CLERK_FRONTEND_API_ORIGIN}";
 
     include /etc/nginx/snippets/security-headers.conf;
 

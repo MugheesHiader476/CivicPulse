@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current User */
+        get: operations["current_user_api_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/complaints": {
         parameters: {
             query?: never;
@@ -82,7 +99,8 @@ export interface paths {
         };
         /** Get Providers */
         get: operations["get_providers_api_meta_providers_get"];
-        put?: never;
+        /** Choose Provider */
+        put: operations["choose_provider_api_meta_providers_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -203,6 +221,14 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
+        /** CurrentUser */
+        CurrentUser: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "citizen" | "operator";
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Detail */
@@ -230,10 +256,47 @@ export interface components {
          * @enum {string}
          */
         Priority: "high" | "normal" | "low";
+        /** ProviderOption */
+        ProviderOption: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "groq" | "ollama";
+            /** Label */
+            label: string;
+            /** Model */
+            model: string;
+            /**
+             * Location
+             * @enum {string}
+             */
+            location: "hosted" | "local";
+            /** Available */
+            available: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** ProviderSelection */
+        ProviderSelection: {
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "groq" | "ollama";
+        };
         /** ProvidersMeta */
         ProvidersMeta: {
             /** Active Provider */
             active_provider: string;
+            /**
+             * Selected Provider
+             * @default rules
+             * @enum {string}
+             */
+            selected_provider: "groq" | "ollama" | "rules" | "simulated";
+            /** Options */
+            options?: components["schemas"]["ProviderOption"][];
             /** Recent */
             recent: components["schemas"]["TriageOutcome"][];
         };
@@ -319,6 +382,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    current_user_api_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUser"];
+                };
+            };
+        };
+    };
     list_complaints_api_complaints_get: {
         parameters: {
             query?: {
@@ -567,6 +650,48 @@ export interface operations {
             };
         };
     };
+    choose_provider_api_meta_providers_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvidersMeta"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -647,5 +772,10 @@ type ReadonlyArray<T> = [
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const pathsApiStatsGetResponses200HeadersXCacheValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/stats"]["get"]["responses"]["200"]["headers"]["X-Cache"]> = ["HIT", "MISS"];
 export const categoryValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Category"]> = ["water", "electricity", "sanitation", "roads", "streetlights", "other"];
+export const currentUserRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrentUser"]["role"]> = ["citizen", "operator"];
 export const priorityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Priority"]> = ["high", "normal", "low"];
+export const providerOptionIdValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProviderOption"]["id"]> = ["groq", "ollama"];
+export const providerOptionLocationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProviderOption"]["location"]> = ["hosted", "local"];
+export const providerSelectionProviderValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProviderSelection"]["provider"]> = ["groq", "ollama"];
+export const providersMetaSelected_providerValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProvidersMeta"]["selected_provider"]> = ["groq", "ollama", "rules", "simulated"];
 export const statusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Status"]> = ["open", "in_progress", "resolved", "rejected"];

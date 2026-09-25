@@ -58,4 +58,13 @@ describe("StatsPage", () => {
     expect(within(pipeline).getByText("1 / 2")).toBeInTheDocument();
     expect(within(pipeline).getByLabelText("rules:fallback, 10 s, fell back to rules")).toBeInTheDocument();
   });
+
+  it("does not request operator history for a citizen", async () => {
+    const { calls } = mockFetch(() => jsonResponse(STATS, { headers: { "X-Cache": "MISS" } }));
+    renderPage(<StatsPage isOperator={false} />, { route: "/stats", path: "/stats" });
+
+    expect(await screen.findByTestId("cache-state")).toHaveTextContent("Cache MISS");
+    expect(calls.map((call) => call.url.pathname)).toEqual(["/api/stats"]);
+    expect(screen.queryByRole("region", { name: /triage pipeline/i })).not.toBeInTheDocument();
+  });
 });
