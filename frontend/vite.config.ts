@@ -53,6 +53,9 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: "jsdom",
+      // Several suites deliberately replace browser globals (fetch and the in-memory session
+      // source). Running files concurrently makes those isolated tests race each other in CI.
+      fileParallelism: false,
       setupFiles: ["./tests/setup.ts"],
       include: ["tests/**/*.test.{ts,tsx}"],
       css: false,

@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from ipaddress import ip_network
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,18 @@ class Settings:
             raise ValueError("TRIAGE_PROVIDER must be rules, simulated, llm, or ollama")
         if provider == "llm" and not os.getenv("GROQ_API_KEY"):
             raise ValueError("GROQ_API_KEY is required with TRIAGE_PROVIDER=llm")
+        try:
+            rate_limit = int(os.getenv("RATE_LIMIT_PER_MINUTE", "6"))
+        except ValueError as exc:
+            raise ValueError("RATE_LIMIT_PER_MINUTE must be a positive integer") from exc
+        if rate_limit < 1:
+            raise ValueError("RATE_LIMIT_PER_MINUTE must be a positive integer")
+        trusted_proxy_cidrs = os.getenv("TRUSTED_PROXY_CIDRS", "")
+        for cidr in (value.strip() for value in trusted_proxy_cidrs.split(",") if value.strip()):
+            try:
+                ip_network(cidr)
+            except ValueError as exc:
+                raise ValueError("TRUSTED_PROXY_CIDRS must contain valid IP networks") from exc
         return cls(
             database_url=os.environ["DATABASE_URL"],
             redis_url=os.environ["REDIS_URL"],
@@ -48,6 +61,6 @@ class Settings:
             ollama_url=os.getenv("OLLAMA_URL", "http://ollama:11434"),
             ollama_model=os.getenv("OLLAMA_MODEL", "llama3.2:1b-instruct-q4_K_M"),
             simulated_failure=os.getenv("SIMULATED_FAILURE", ""),
-            rate_limit=int(os.getenv("RATE_LIMIT_PER_MINUTE", "6")),
-            trusted_proxy_cidrs=os.getenv("TRUSTED_PROXY_CIDRS", ""),
+            rate_limit=rate_limit,
+            trusted_proxy_cidrs=trusted_proxy_cidrs,
         )

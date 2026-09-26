@@ -38,7 +38,7 @@ frontend, backend, database, and Redis services. The frontend container needs th
 from the publishable key. Standalone `docker run` also needs a reachable `API_UPSTREAM`.
 
 - **Build stage:** `node:22.20.0-alpine3.22`, `npm ci` before `COPY . .` so the dependency layer is cached.
-- **Runtime stage:** `nginx:1.27.5-alpine3.21`, runs as the unprivileged `nginx` user on port 8080, `HEALTHCHECK` on
+- **Runtime stage:** `nginx:1.30.5-alpine3.24`, runs as the unprivileged `nginx` user on port 8080, `HEALTHCHECK` on
   `/healthz`, exec-form `CMD`. The final image holds only nginx config and the static bundle: no Node, no
   `node_modules`, no source.
 - **Build context:** 506 KB with `.dockerignore`. Without it, `node_modules` alone is well over 100 MB.

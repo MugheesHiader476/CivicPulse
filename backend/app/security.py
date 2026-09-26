@@ -10,7 +10,15 @@ def client_ip(request: Request) -> str:
     except ValueError:
         return peer
     cidrs = request.app.state.settings.trusted_proxy_cidrs
-    if not any(peer_address in ip_network(cidr.strip()) for cidr in cidrs.split(",") if cidr.strip()):
+    trusted_proxy = False
+    for cidr in (value.strip() for value in cidrs.split(",") if value.strip()):
+        try:
+            if peer_address in ip_network(cidr):
+                trusted_proxy = True
+                break
+        except ValueError:
+            continue
+    if not trusted_proxy:
         return peer
     forwarded = request.headers.get("X-Real-IP", "")
     try:
