@@ -29,7 +29,8 @@ ENV API_UPSTREAM=http://backend:8000 \
 
 # Run as the unprivileged nginx user (uid 101): listen on 8080, keep pid and temp files in /tmp,
 # and let the entrypoint render templates into conf.d.
-RUN rm -f /etc/nginx/conf.d/default.conf \
+RUN apk upgrade --no-cache \
+ && rm -f /etc/nginx/conf.d/default.conf \
  && chown -R nginx:nginx /etc/nginx/conf.d /var/cache/nginx
 
 COPY --chown=nginx:nginx nginx/nginx.conf /etc/nginx/nginx.conf
