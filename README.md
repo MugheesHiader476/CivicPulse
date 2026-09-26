@@ -17,11 +17,11 @@ bash scripts/dev-up.sh
 The script creates a private `.env` with a random database password if one does not exist,
 builds images, applies Alembic migrations, and seeds 30 complaints. If you already have a
 `.env`, set a nonempty `POSTGRES_PASSWORD` there. Open <http://127.0.0.1:8080/sign-in>.
-A signed-in citizen can report an issue and see aggregate stats. To enable the operations
-dashboard, add the Clerk user ID of each operator to `CLERK_OPERATOR_USER_IDS` in `.env`
-(comma separated), then rerun the script. Only allowlisted operators can read complaint
-details or change status. The script derives the exact Clerk frontend API origin from the
-publishable key for nginx's content security policy.
+A signed-in citizen sees only **Report** and **My reports**. Citizens submit complaints; administrators review them, change their status, and see city-wide numbers. An administrator sees only **Admin** (the complaint board) and **Stats** and lands on the board after sign-in. Admin accounts cannot submit complaints. To grant admin access, add the Clerk user ID of each administrator to `CLERK_OPERATOR_USER_IDS` in `.env` (comma separated), then rerun the script. The API enforces the same role split.
+
+The placeholder is in `.env.example`: replace `user_replace_with_admin_clerk_id` with the administrator's user ID from the Clerk Dashboard. Sign in at `/sign-in` using that Clerk account to open Admin and Stats. Use a different, non-allowlisted Clerk account to submit and track reports. This setting takes user IDs, not an email address, password, Clerk secret, or publishable key. The script derives the exact Clerk frontend API origin from the publishable key for nginx's content security policy.
+
+Reports created before the ownership migration (including seeded sample reports) have no linked account and appear only in Admin. New reports are linked to their submitting account. The normal startup script applies the migration; for an existing deployment run `alembic upgrade head` before accepting submissions.
 
 Run `docker compose down` to stop the stack without erasing data. Run
 `docker compose exec backend python -m app.seed` to seed again; it adds zero duplicate rows.
@@ -52,9 +52,25 @@ change the safety fallback: a failed AI call falls back to keyword rules. Groq
 receives complaint text; the local option keeps it inside the Compose network.
 The key never goes to the browser.
 
-## Scope of this implementation
+## Continuous integration
 
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pull requests targeting
+`main`, pushes to `dev`, and manual dispatch. It checks Ruff, mypy, ESLint and TypeScript;
+runs backend tests with a 65% coverage gate and frontend component tests; builds both
+container images without pushing them; scans each image with pinned Trivy for fixable HIGH and
+CRITICAL vulnerabilities; and runs an isolated Compose smoke test through nginx to the
+API, PostgreSQL and Redis. The smoke test signs a session with a temporary CI-only key
+and uses `TRIAGE_PROVIDER=simulated`, so CI needs no Clerk or Groq account secrets.
+
+After pushing the workflow, enable a `main` branch ruleset in GitHub: require a pull
+request, one approval, and the CI checks before merging. GitHub only lists check names
+after the workflow has run once. This repository does not yet contain Kubernetes
+overlays, so the PDF's kubeconform manifest job belongs with the Kubernetes work.
+CI does not publish images or deploy; `cd.yml` and `release.yml` remain separate work.
+
+
+## Scope of this implementation
 The backend API, PostgreSQL migration, Redis cache and limiter, rules and simulated triage,
 hosted Groq and local Ollama adapters, Docker development stack, and frontend API integration
-are implemented. The SRS also requests production Compose, Kubernetes, CI/CD, review history,
+and CI are implemented. The SRS also requests production Compose, Kubernetes, CD, review history,
 load-test evidence and a demo video; those are separate deliverables and are not yet present.

@@ -15,6 +15,8 @@ if [[ ! -f .env ]]; then
     printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)"
     printf 'TRIAGE_PROVIDER=rules\n'
     printf 'GROQ_API_KEY=\n'
+    printf '# Clerk user IDs permitted to use the Admin dashboard (comma-separated)\n'
+    printf 'CLERK_OPERATOR_USER_IDS=\n'
   } > .env
 fi
 

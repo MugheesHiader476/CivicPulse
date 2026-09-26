@@ -21,7 +21,7 @@ class RuleBasedTriage:
         clean = " ".join(INJECTION.sub("", text).split())
         lowered = clean.lower()
         scores = {category: sum(len(word) for word in words if word in lowered) for category, words in KEYWORDS.items()}
-        category = max(scores, key=scores.get) if any(scores.values()) else Category.other
+        category = max(scores, key=lambda item: scores[item]) if any(scores.values()) else Category.other
         priority = Priority.high if any(word in lowered for word in HIGH) else Priority.low if any(word in lowered for word in LOW) else Priority.normal
         summary = f"{category.value.title()} issue at {location}: {clean.split('.')[0].strip()}"
         return TriageResult(category=category, priority=priority, summary=summary[:140], confidence=0.5)

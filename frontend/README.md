@@ -1,8 +1,7 @@
 # CivicPulse - frontend
 
 React 18 + Vite + TypeScript, served by nginx from a multi-stage image (assignment section 2.1).
-Three views: **Report** (submit), **Dashboard** (operator-only, paginated board with status changes) and
-**Stats** (aggregates and X-Cache state; operators also see the triage pipeline), plus an operator complaint detail page.
+Citizens see **Report** to submit a complaint and **My reports** to track its status. Administrators see **Admin** (the city-wide complaint board and status controls) and **Stats** (city-wide aggregates, cache state, and the triage pipeline). The roles have separate navigation and landing pages.
 
 ## Run it
 
@@ -15,6 +14,7 @@ npm run dev           # real backend; requires frontend/.env.local with VITE_CLE
 For real-backend development, `/api` is proxied to `CIVICPULSE_API_TARGET` (default
 `http://127.0.0.1:8000`), and the backend needs the matching Clerk secret key. Open
 http://localhost:5173. In mock mode the header shows a pink **MOCK-API** badge.
+Mock mode starts in the citizen view; open `http://localhost:5173/?mock_role=admin` to preview the administrator view.
 
 | Script | What it does |
 |---|---|

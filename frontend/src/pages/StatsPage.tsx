@@ -82,10 +82,10 @@ function PipelinePanel({ meta }: { meta: ProvidersMeta }) {
   );
 }
 
-export function StatsPage({ isOperator = true }: { isOperator?: boolean }) {
+export function StatsPage() {
   useDocumentTitle("City stats");
   const stats = useStats();
-  const providers = useProviders(30_000, isOperator);
+  const providers = useProviders();
   const result = stats.data;
 
   return (
@@ -119,9 +119,9 @@ export function StatsPage({ isOperator = true }: { isOperator?: boolean }) {
         />
       )}
 
-      {isOperator && providers.data && <PipelinePanel meta={providers.data} />}
-      {isOperator && providers.data && <ProviderSelector meta={providers.data} />}
-      {isOperator && providers.isError && (
+      {providers.data && <PipelinePanel meta={providers.data} />}
+      {providers.data && <ProviderSelector meta={providers.data} />}
+      {providers.isError && (
         <ErrorNotice error={providers.error} title="Could not load triage provider status" onRetry={() => void providers.refetch()} />
       )}
     </div>

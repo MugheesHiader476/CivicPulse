@@ -1,9 +1,9 @@
 """Exercise real signature, expiry, origin, and header checks without Clerk network calls."""
 
 
-def test_signed_clerk_session_can_use_all_app_routes(api, payload):
+def test_signed_clerk_session_can_use_all_app_routes(api, payload, citizen_post):
     client, _, _ = api
-    created = client.post("/api/complaints", json=payload)
+    created = citizen_post(payload)
     assert created.status_code == 201
     complaint_id = created.json()["id"]
     assert client.get("/api/stats").status_code == 200

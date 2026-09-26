@@ -13,6 +13,8 @@ import { createQueryClient } from "./lib/queries";
 import { AuthLoading, AuthPage } from "./pages/AuthPage";
 import { ComplaintPage } from "./pages/ComplaintPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { MyReportsPage } from "./pages/MyReportsPage";
+import { MyReportPage } from "./pages/MyReportPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { StatsPage } from "./pages/StatsPage";
 import { SubmitPage } from "./pages/SubmitPage";
@@ -25,10 +27,12 @@ function AppRoutes({ isOperator }: { isOperator: boolean }) {
   return (
     <ErrorBoundary resetKey={pathname}>
       <Routes>
-        <Route path="/" element={<SubmitPage />} />
+        <Route path="/" element={isOperator ? <Navigate to="/dashboard" replace /> : <SubmitPage />} />
+        <Route path="/my-reports" element={isOperator ? <AccessDeniedPage area="citizen" /> : <MyReportsPage />} />
+        <Route path="/my-reports/:id" element={isOperator ? <AccessDeniedPage area="citizen" /> : <MyReportPage />} />
         <Route path="/dashboard" element={isOperator ? <DashboardPage /> : <AccessDeniedPage />} />
         <Route path="/complaints/:id" element={isOperator ? <ComplaintPage /> : <AccessDeniedPage />} />
-        <Route path="/stats" element={<StatsPage isOperator={isOperator} />} />
+        <Route path="/stats" element={isOperator ? <StatsPage /> : <AccessDeniedPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </ErrorBoundary>
@@ -36,6 +40,8 @@ function AppRoutes({ isOperator }: { isOperator: boolean }) {
 }
 
 function WorkspaceContent({ mockAuth }: { mockAuth: boolean }) {
+  // The development mock starts as a citizen; ?mock_role=admin previews operations.
+  const [mockOperator] = useState(() => new URLSearchParams(window.location.search).get("mock_role") === "admin");
   const user = useQuery({
     queryKey: ["current-user"],
     queryFn: ({ signal }) => getCurrentUser(signal),
@@ -46,7 +52,7 @@ function WorkspaceContent({ mockAuth }: { mockAuth: boolean }) {
   if (!mockAuth && user.isError) {
     return <main className="container main"><ErrorNotice error={user.error} title="Could not check account access" onRetry={() => void user.refetch()} /></main>;
   }
-  const isOperator = mockAuth || user.data?.role === "operator";
+  const isOperator = mockAuth ? mockOperator : user.data?.role === "operator";
   return <AppShell isOperator={isOperator}><AppRoutes isOperator={isOperator} /></AppShell>;
 }
 

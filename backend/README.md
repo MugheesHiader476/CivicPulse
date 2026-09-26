@@ -27,9 +27,8 @@ cd backend
 ## API and access
 
 All `/api` routes require a verified Clerk session bearer token. Signed-in citizens can
-`POST /api/complaints`, `GET /api/stats`, and `GET /api/me`. The `/api/me` response reports
-`citizen` or `operator`. Complaint list/detail, status updates, and provider history require
-the Clerk user ID to be listed in `CLERK_OPERATOR_USER_IDS`; otherwise they return 403.
+`POST /api/complaints`, `GET /api/my/complaints`, `GET /api/my/complaints/{id}`, and `GET /api/me`. Every new report is tied to its submitting Clerk account. The personal endpoints return only that account's reports; a different account's report returns 404. The `/api/me` response reports
+`citizen` or `operator`. Administrators, defined by `CLERK_OPERATOR_USER_IDS`, can use the city-wide complaint list/detail, statistics, status updates, and provider history. They cannot use the citizen submission or personal-report endpoints; those return 403. Citizen access to admin endpoints also returns 403.
 `/health`, `/ready`, and `/metrics` remain public. The SRS does not define an identity
 model; Clerk sessions and the explicit operator allowlist are this implementation's policy.
 

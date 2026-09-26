@@ -13,6 +13,8 @@ import { ApiError } from "../api/http";
 
 export const queryKeys = {
   complaints: ["complaints"] as const,
+  myComplaints: ["my-complaints"] as const,
+  myComplaint: (id: string) => ["my-complaints", "detail", id] as const,
   complaintList: (query: ListComplaintsQuery) => ["complaints", "list", query] as const,
   complaint: (id: string) => ["complaints", "detail", id] as const,
   stats: ["stats"] as const,

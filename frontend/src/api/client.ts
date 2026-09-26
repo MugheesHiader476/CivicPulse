@@ -26,6 +26,7 @@ export type ProvidersMeta = Schemas["ProvidersMeta"];
 export type TriageOutcome = Schemas["TriageOutcome"];
 export type CurrentUser = Schemas["CurrentUser"];
 export type ListComplaintsQuery = NonNullable<paths["/api/complaints"]["get"]["parameters"]["query"]>;
+export type ListMyComplaintsQuery = NonNullable<paths["/api/my/complaints"]["get"]["parameters"]["query"]>;
 export type ProviderChoice = Schemas["ProviderSelection"]["provider"];
 
 /** Enum values as runtime arrays, generated from the schema - never hand-maintained. */
@@ -39,13 +40,15 @@ export type CacheStatus = (typeof pathsApiStatsGetResponses200HeadersXCacheValue
 const PATHS = {
   me: "/api/me",
   complaints: "/api/complaints",
+  myComplaints: "/api/my/complaints",
+  myComplaint: "/api/my/complaints/{id}",
   complaint: "/api/complaints/{id}",
   complaintStatus: "/api/complaints/{id}/status",
   stats: "/api/stats",
   providers: "/api/meta/providers",
 } as const satisfies Record<string, keyof paths>;
 
-function withId(path: (typeof PATHS)["complaint" | "complaintStatus"], id: string): string {
+function withId(path: (typeof PATHS)["complaint" | "complaintStatus" | "myComplaint"], id: string): string {
   return path.replace("{id}", encodeURIComponent(id));
 }
 
@@ -74,6 +77,17 @@ export async function createComplaint(body: ComplaintCreate): Promise<CreatedCom
 
 export async function listComplaints(query: ListComplaintsQuery, signal?: AbortSignal): Promise<ComplaintPage> {
   const res = await apiRequest<ComplaintPage>(PATHS.complaints, { query, signal });
+  return res.data;
+}
+
+export async function listMyComplaints(page = 1, signal?: AbortSignal): Promise<ComplaintPage> {
+  const query: ListMyComplaintsQuery = { page, page_size: 20 };
+  const res = await apiRequest<ComplaintPage>(PATHS.myComplaints, { query, signal });
+  return res.data;
+}
+
+export async function getMyComplaint(id: string, signal?: AbortSignal): Promise<Complaint> {
+  const res = await apiRequest<Complaint>(withId(PATHS.myComplaint, id), { signal });
   return res.data;
 }
 

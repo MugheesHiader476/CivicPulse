@@ -15,7 +15,7 @@ COPY . .
 RUN npm run build
 
 # ---- runtime stage -----------------------------------------------------------
-FROM nginx:1.27.5-alpine3.21 AS runtime
+FROM nginx:1.30.5-alpine3.24 AS runtime
 
 # Runtime configuration (overridable per environment with -e / env:). Nothing here is secret.
 #   API_UPSTREAM               where nginx proxies /api (compose: http://backend:8000,
@@ -29,7 +29,8 @@ ENV API_UPSTREAM=http://backend:8000 \
 
 # Run as the unprivileged nginx user (uid 101): listen on 8080, keep pid and temp files in /tmp,
 # and let the entrypoint render templates into conf.d.
-RUN rm -f /etc/nginx/conf.d/default.conf \
+RUN apk upgrade --no-cache \
+ && rm -f /etc/nginx/conf.d/default.conf \
  && chown -R nginx:nginx /etc/nginx/conf.d /var/cache/nginx
 
 COPY --chown=nginx:nginx nginx/nginx.conf /etc/nginx/nginx.conf

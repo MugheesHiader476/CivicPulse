@@ -102,3 +102,16 @@ def api(token_factory):
 @pytest.fixture
 def payload():
     return {"text": "Burst water pipe flooding Street 12 since fajr", "location": "Street 12, Lahore"}
+
+
+@pytest.fixture
+def citizen_post(api, token_factory):
+    client, _, _ = api
+
+    def submit(body, *, user_id="citizen_submitter"):
+        return client.post(
+            "/api/complaints", json=body,
+            headers={"Authorization": f"Bearer {token_factory(user_id=user_id)}"},
+        )
+
+    return submit

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 from uuid import UUID
 
 from sqlalchemy import func, select, text
@@ -23,10 +24,10 @@ class ComplaintRepository:
     def __init__(self, sessions: sessionmaker[Session]):
         self.sessions = sessions
 
-    def create(self, data: ComplaintCreate, triage: TriageResult, provider: str, latency_ms: int, error_class: str | None) -> Complaint:
+    def create(self, data: ComplaintCreate, reporter_id: str, triage: TriageResult, provider: str, latency_ms: int, error_class: str | None) -> Complaint:
         with self.sessions.begin() as session:
             row = ComplaintRow(
-                text=data.text, location=data.location, reporter_contact=data.reporter_contact,
+                text=data.text, location=data.location, reporter_contact=data.reporter_contact, reporter_id=reporter_id,
                 category=triage.category.value, priority=triage.priority.value,
                 status=Status.open.value, ai_summary=triage.summary, triaged_by=provider,
                 triage_latency_ms=latency_ms,
@@ -58,6 +59,18 @@ class ComplaintRepository:
             rows = session.scalars(query.order_by(ComplaintRow.created_at.desc(), ComplaintRow.id.desc()).offset((page - 1) * page_size).limit(page_size)).all()
             return ComplaintPage(items=[Complaint.model_validate(row) for row in rows], total=total, page=page, page_size=page_size)
 
+    def list_for_reporter(self, reporter_id: str, page: int, page_size: int) -> ComplaintPage:
+        with self.sessions() as session:
+            query = select(ComplaintRow).where(ComplaintRow.reporter_id == reporter_id)
+            total = session.scalar(select(func.count()).select_from(query.subquery())) or 0
+            rows = session.scalars(query.order_by(ComplaintRow.created_at.desc(), ComplaintRow.id.desc()).offset((page - 1) * page_size).limit(page_size)).all()
+            return ComplaintPage(items=[Complaint.model_validate(row) for row in rows], total=total, page=page, page_size=page_size)
+
+    def get_for_reporter(self, complaint_id: UUID, reporter_id: str) -> Complaint | None:
+        with self.sessions() as session:
+            row = session.scalar(select(ComplaintRow).where(ComplaintRow.id == complaint_id, ComplaintRow.reporter_id == reporter_id))
+            return Complaint.model_validate(row) if row else None
+
     def update_status(self, complaint_id: UUID, target: Status, transitions: dict[Status, frozenset[Status]]) -> tuple[Complaint | None, Status | None]:
         with self.sessions.begin() as session:
             row = session.get(ComplaintRow, complaint_id, with_for_update=True)
@@ -82,7 +95,7 @@ class ComplaintRepository:
                 by_status=grouped(ComplaintRow.status),
             )
 
-    def outcomes(self) -> list[TriageOutcome]:
+    def outcomes(self) -> builtins.list[TriageOutcome]:
         with self.sessions() as session:
             rows = session.scalars(select(TriageOutcomeRow).order_by(TriageOutcomeRow.id.desc()).limit(20)).all()
             return [TriageOutcome.model_validate(row) for row in rows]
