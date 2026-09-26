@@ -35,12 +35,14 @@ class ComplaintRow(Base):
         CheckConstraint("status IN ('open','in_progress','resolved','rejected')", name="ck_complaints_status"),
         Index("ix_complaints_status_priority", "status", "priority"),
         Index("ix_complaints_created_at", "created_at"),
+        Index("ix_complaints_reporter_id_created_at", "reporter_id", "created_at"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     location: Mapped[str] = mapped_column(String(200), nullable=False)
     reporter_contact: Mapped[str | None] = mapped_column(String(200))
+    reporter_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     category: Mapped[str] = mapped_column(String(32), nullable=False)
     priority: Mapped[str] = mapped_column(String(16), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")

@@ -1,5 +1,7 @@
 """App-wide triage provider selection shared by all backend replicas through Redis."""
 
+from typing import Literal
+
 from app.config import Settings
 from app.providers.cache import RedisCache
 from app.providers.triage.base import TriageProvider
@@ -18,14 +20,27 @@ class ProviderSelector:
         self.groq = LLMProvider(settings.groq_api_key, settings.groq_model)
         self.ollama = OllamaProvider(settings.ollama_url, settings.ollama_model)
         self.rules = RuleBasedTriage()
-        self.default = {"llm": "groq", "ollama": "ollama"}.get(settings.triage_provider, "rules")
+        self.default: Literal["groq", "ollama", "rules"] = (
+            "groq" if settings.triage_provider == "llm" else
+            "ollama" if settings.triage_provider == "ollama" else "rules"
+        )
 
-    def selected(self) -> str:
+    def selected(self) -> Literal["groq", "ollama", "rules"]:
         value = self.cache.get_triage_provider()
-        return value if value in {"groq", "ollama"} else self.default
+        if value == "groq":
+            return "groq"
+        if value == "ollama":
+            return "ollama"
+        return self.default
 
     def current(self) -> TriageProvider:
-        return {"groq": self.groq, "ollama": self.ollama, "rules": self.rules}[self.selected()]
+        selected = self.selected()
+        if selected == "groq":
+            return self.groq
+        if selected == "ollama":
+            return self.ollama
+        return self.rules
+
 
     def options(self) -> list[ProviderOption]:
         groq_ready = bool(self.groq.key)

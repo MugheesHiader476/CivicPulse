@@ -55,3 +55,9 @@ def require_operator(request: Request, user_id: Annotated[str, Depends(require_u
         raise HTTPException(status_code=403, detail="Operator access required")
     return user_id
 
+
+def require_citizen(request: Request, user_id: Annotated[str, Depends(require_user)]) -> str:
+    """Accounts assigned to operations cannot submit or browse personal reports."""
+    if user_id in request.app.state.settings.clerk_operator_user_ids:
+        raise HTTPException(status_code=403, detail="Citizen access required")
+    return user_id

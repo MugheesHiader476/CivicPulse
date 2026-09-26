@@ -105,6 +105,7 @@ function summarise(text: string, location: string, category: Category): string {
 
 export class FakeBackend {
   private complaints: Complaint[];
+  private myIds = new Set<string>();
   private outcomes: TriageOutcome[];
   private statsCache: { value: Stats; expires: number } | null = null;
   private rateWindow = { start: 0, count: 0 };
@@ -145,10 +146,13 @@ export class FakeBackend {
     const { method, url, requestId } = req;
     const path = url.pathname.replace(/\/+$/, "");
     const detail = path.match(/^\/api\/complaints\/([^/]+)$/);
+    const myDetail = path.match(/^\/api\/my\/complaints\/([^/]+)$/);
     const statusPath = path.match(/^\/api\/complaints\/([^/]+)\/status$/);
 
     if (path === "/api/complaints" && method === "GET") return this.list(req);
+    if (path === "/api/my/complaints" && method === "GET") return this.list(req, true);
     if (path === "/api/complaints" && method === "POST") return this.create(req);
+    if (myDetail && method === "GET") return this.get(decodeURIComponent(myDetail[1] ?? ""), req, true);
     if (detail && method === "GET") return this.get(decodeURIComponent(detail[1] ?? ""), req);
     if (statusPath && method === "PATCH") return this.patchStatus(decodeURIComponent(statusPath[1] ?? ""), req);
     if (path === "/api/stats" && method === "GET") return this.stats(req);
@@ -159,7 +163,7 @@ export class FakeBackend {
     return json(404, { detail: "Not Found" }, requestId);
   }
 
-  private async list(req: MockRequest): Promise<Response> {
+  private async list(req: MockRequest, mine = false): Promise<Response> {
     await sleep(180 + Math.random() * 220, req.signal);
     const q = req.url.searchParams;
     const page = Number(q.get("page") ?? "1");
@@ -172,6 +176,7 @@ export class FakeBackend {
     }
     const filtered = this.complaints.filter(
       (c) =>
+        (!mine || this.myIds.has(c.id)) &&
         (!q.get("category") || c.category === q.get("category")) &&
         (!q.get("priority") || c.priority === q.get("priority")) &&
         (!q.get("status") || c.status === q.get("status")),
@@ -180,9 +185,9 @@ export class FakeBackend {
     return json(200, { items, total: filtered.length, page, page_size: pageSize }, req.requestId);
   }
 
-  private async get(id: string, req: MockRequest): Promise<Response> {
+  private async get(id: string, req: MockRequest, mine = false): Promise<Response> {
     await sleep(150, req.signal);
-    const complaint = this.complaints.find((c) => c.id === id);
+    const complaint = this.complaints.find((c) => c.id === id && (!mine || this.myIds.has(c.id)));
     return complaint
       ? json(200, complaint, req.requestId)
       : json(404, { detail: `Complaint ${id} not found` }, req.requestId);
@@ -252,6 +257,7 @@ export class FakeBackend {
       updated_at: stamp,
     };
     this.complaints.unshift(complaint);
+    this.myIds.add(complaint.id);
     this.outcomes.unshift({
       complaint_id: complaint.id,
       provider: result.provider,

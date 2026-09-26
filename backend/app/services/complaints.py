@@ -2,6 +2,7 @@ import hashlib
 import logging
 import random
 import time
+from typing import Literal
 from uuid import UUID
 
 from prometheus_client import Counter, Histogram
@@ -61,7 +62,7 @@ class ComplaintService:
         self.rules = RuleBasedTriage()
         self.rate_limit = rate_limit
 
-    def create(self, data: ComplaintCreate, client_ip: str, request_id: str) -> Complaint:
+    def create(self, data: ComplaintCreate, reporter_id: str, client_ip: str, request_id: str) -> Complaint:
         retry_after = self.cache.check_rate(client_ip, self.rate_limit)
         if retry_after:
             raise RateLimited(retry_after)
@@ -88,7 +89,7 @@ class ComplaintService:
                 self.cache.set_triage(key, result, provider_name)
         latency_ms = int((time.monotonic() - started) * 1000)
         TRIAGE_LATENCY.observe(latency_ms / 1000)
-        complaint = self.repository.create(data, result, provider_name, latency_ms, error_class)
+        complaint = self.repository.create(data, reporter_id, result, provider_name, latency_ms, error_class)
         self.cache.invalidate_stats()
         if error_class:
             FALLBACKS.inc()
@@ -118,6 +119,15 @@ class ComplaintService:
     def list(self, category: Category | None, priority: Priority | None, status: Status | None, page: int, page_size: int) -> ComplaintPage:
         return self.repository.list(category, priority, status, page, page_size)
 
+    def list_for_reporter(self, reporter_id: str, page: int, page_size: int) -> ComplaintPage:
+        return self.repository.list_for_reporter(reporter_id, page, page_size)
+
+    def get_for_reporter(self, complaint_id: UUID, reporter_id: str) -> Complaint:
+        complaint = self.repository.get_for_reporter(complaint_id, reporter_id)
+        if complaint is None:
+            raise MissingComplaint
+        return complaint
+
     def update_status(self, complaint_id: UUID, target: Status) -> Complaint:
         # Check the current status under the repository row lock.
         updated, previous = self.repository.update_status(complaint_id, target, TRANSITIONS)
@@ -144,7 +154,13 @@ class ComplaintService:
                 options=self.selector.options(),
                 recent=self.repository.outcomes(),
             )
-        selected = {"llm:groq": "groq", "llm:ollama": "ollama", "simulated": "simulated"}.get(self.provider.name, "rules")
+        selected: Literal["groq", "ollama", "rules", "simulated"] = "rules"
+        if self.provider.name == "llm:groq":
+            selected = "groq"
+        elif self.provider.name == "llm:ollama":
+            selected = "ollama"
+        elif self.provider.name == "simulated":
+            selected = "simulated"
         return ProvidersMeta(active_provider=self.provider.name, selected_provider=selected,
                              recent=self.repository.outcomes())
 

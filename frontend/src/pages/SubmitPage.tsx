@@ -141,6 +141,7 @@ export function SubmitPage() {
     onSuccess: (result) => {
       setCreated(result);
       void queryClient.invalidateQueries({ queryKey: queryKeys.complaints });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.myComplaints });
       void queryClient.invalidateQueries({ queryKey: queryKeys.stats });
       void queryClient.invalidateQueries({ queryKey: queryKeys.providers });
     },

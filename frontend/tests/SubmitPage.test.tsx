@@ -46,6 +46,9 @@ describe("SubmitPage", () => {
     expect(within(result).getByText("Burst water main flooding Street 12 since dawn.")).toBeInTheDocument();
     expect(within(result).getByText("llm:groq")).toBeInTheDocument();
     expect(within(result).getByText(/812 ms/)).toBeInTheDocument();
+    expect(within(result).getByRole("link", { name: /track your report/i })).toHaveAttribute(
+      "href", `/my-reports/${makeComplaint().id}`,
+    );
 
     expect(calls).toHaveLength(1);
     expect(calls[0]?.method).toBe("POST");

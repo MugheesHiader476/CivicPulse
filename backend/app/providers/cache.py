@@ -1,6 +1,7 @@
 import hashlib
 import json
 import time
+from typing import cast
 
 from redis import Redis
 
@@ -22,12 +23,12 @@ return {count, redis.call('TTL', KEYS[1])}
         window = now // 60
         expires_in = 60 - now % 60
         digest = hashlib.sha256(client_ip.encode()).hexdigest()
-        count, ttl = self.client.eval(self.RATE_SCRIPT, 1, f"rate:{digest}:{window}", expires_in)
+        count, ttl = cast(tuple[int, int], self.client.eval(self.RATE_SCRIPT, 1, f"rate:{digest}:{window}", expires_in))
         return max(1, int(ttl)) if int(count) > limit else 0
 
     def get_stats(self) -> tuple[dict | None, int]:
-        version = int(self.client.get("stats:version") or 0)
-        raw = self.client.get(f"stats:v1:{version}")
+        version = int(cast(bytes | None, self.client.get("stats:version")) or 0)
+        raw = cast(bytes | None, self.client.get(f"stats:v1:{version}"))
         return (json.loads(raw) if raw else None), version
 
     def set_stats(self, value: dict, version: int) -> None:
@@ -37,7 +38,7 @@ return {count, redis.call('TTL', KEYS[1])}
         self.client.incr("stats:version")
 
     def get_triage(self, key: str) -> tuple[TriageResult, str] | None:
-        raw = self.client.get(f"triage:{key}")
+        raw = cast(bytes | None, self.client.get(f"triage:{key}"))
         if raw is None:
             return None
         value = json.loads(raw)

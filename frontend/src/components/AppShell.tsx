@@ -10,7 +10,8 @@ import { PulseLogo } from "./Pulse";
 
 const NAV = [
   { to: "/", label: "Report", icon: Megaphone, end: true },
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: false },
+  { to: "/my-reports", label: "My reports", icon: LayoutDashboard, end: false },
+  { to: "/dashboard", label: "Admin", icon: LayoutDashboard, end: false },
   { to: "/stats", label: "Stats", icon: ChartColumn, end: false },
 ] as const;
 
@@ -63,7 +64,7 @@ export function AppShell({ children, isOperator }: { children: ReactNode; isOper
   }, [pathname]);
 
   const navLinks = (className: string) =>
-    NAV.filter(({ to }) => isOperator || to !== "/dashboard").map(({ to, label, icon: Icon, end }) => (
+    NAV.filter(({ to }) => isOperator ? (to === "/dashboard" || to === "/stats") : (to === "/" || to === "/my-reports")).map(({ to, label, icon: Icon, end }) => (
       <NavLink
         key={to}
         to={to}
@@ -84,7 +85,7 @@ export function AppShell({ children, isOperator }: { children: ReactNode; isOper
       </a>
       <header className="app-header">
         <div className="container header-row">
-          <NavLink to="/" className="brand" aria-label="CivicPulse home">
+          <NavLink to={isOperator ? "/dashboard" : "/"} className="brand" aria-label="CivicPulse home">
             <PulseLogo />
             <span className="brand-word">
               Civic<span>Pulse</span>

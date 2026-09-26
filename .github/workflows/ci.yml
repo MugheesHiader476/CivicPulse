@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-type:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install backend check dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Ruff
+        working-directory: backend
+        run: python -m ruff check app tests ../scripts/ci-smoke.py
+      - name: Mypy
+        working-directory: backend
+        run: python -m mypy app ../scripts/ci-smoke.py --ignore-missing-imports
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: ESLint
+        working-directory: frontend
+        run: npm run lint
+      - name: TypeScript
+        working-directory: frontend
+        run: npm run typecheck
+
+  test-backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      TRIAGE_PROVIDER: simulated
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install backend test dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Pytest with 65% coverage gate
+        working-directory: backend
+        run: python -m pytest -q --cov=app --cov-report=term-missing --cov-fail-under=65
+
+  test-frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Vitest component tests
+        working-directory: frontend
+        run: npm test
+
+  build:
+    needs: [lint-and-type, test-backend, test-frontend]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: civicpulse-backend
+            context: ./backend
+          - name: civicpulse-frontend
+            context: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image without publishing
+        run: docker build -t "${{ matrix.name }}:ci" "${{ matrix.context }}"
+
+  scan:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: civicpulse-backend
+            context: ./backend
+          - name: civicpulse-frontend
+            context: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image for local vulnerability scan
+        run: docker build -t "${{ matrix.name }}:ci" "${{ matrix.context }}"
+      - name: Fail on HIGH or CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: "${{ matrix.name }}:ci"
+          version: v0.74.0
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+  integration:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: civicpulse-ci-${{ github.run_id }}
+      POSTGRES_PASSWORD: ci-only-disposable-password
+      CLERK_SECRET_KEY: sk_test_ci_placeholder
+      CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
+      CLERK_FRONTEND_API_ORIGIN: https://ci.clerk.accounts.dev
+      CLERK_AUTHORIZED_PARTIES: http://127.0.0.1:8080
+      CLERK_OPERATOR_USER_IDS: ci_operator
+      TRIAGE_PROVIDER: simulated
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install smoke dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Start isolated Compose stack with temporary test signing key
+        shell: bash
+        run: |
+          python scripts/ci-smoke.py prepare "$RUNNER_TEMP"
+          export CLERK_JWT_KEY="$(cat "$RUNNER_TEMP/civicpulse-ci-public.pem")"
+          docker compose up -d --build
+          for attempt in {1..36}; do
+            if curl --fail --silent http://127.0.0.1:8000/ready >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          docker compose ps
+          exit 1
+      - name: Check authenticated request path and Redis cache
+        run: python scripts/ci-smoke.py verify "$RUNNER_TEMP"
+      - name: Show container logs if smoke fails
+        if: failure()
+        run: docker compose logs --no-color --tail=120
+      - name: Remove only this CI project's containers and volumes
+        if: always()
+        run: docker compose down --volumes --remove-orphans

@@ -17,7 +17,7 @@ def install_selector(api, monkeypatch, *, groq_key="test-groq", local_ready=True
     return client, app, cache, selector
 
 
-def test_operator_switches_providers_and_cache_is_separate(api, payload, monkeypatch):
+def test_operator_switches_providers_and_cache_is_separate(api, payload, monkeypatch, citizen_post):
     client, app, cache, selector = install_selector(api, monkeypatch)
     calls = {"groq": 0, "ollama": 0}
 
@@ -33,14 +33,14 @@ def test_operator_switches_providers_and_cache_is_separate(api, payload, monkeyp
     selected = client.put("/api/meta/providers", json={"provider": "groq"})
     assert selected.status_code == 200
     assert selected.json()["selected_provider"] == "groq"
-    first = client.post("/api/complaints", json=payload)
+    first = citizen_post(payload)
     assert first.status_code == 201
     assert first.json()["triaged_by"] == "llm:groq"
 
     selected = client.put("/api/meta/providers", json={"provider": "ollama"})
     assert selected.status_code == 200
     assert selected.json()["selected_provider"] == "ollama"
-    second = client.post("/api/complaints", json=payload)
+    second = citizen_post(payload)
     assert second.status_code == 201
     assert second.json()["triaged_by"] == "llm:ollama"
     assert cache.provider_choice == "ollama"
