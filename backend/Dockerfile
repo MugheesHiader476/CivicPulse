@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.7
-FROM python:3.12.11-slim-bookworm AS builder
+FROM python:3.12.14-slim-bookworm AS builder
 WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-FROM python:3.12.11-slim-bookworm
+FROM python:3.12.14-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --from=builder /install /usr/local

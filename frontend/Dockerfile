@@ -15,7 +15,7 @@ COPY . .
 RUN npm run build
 
 # ---- runtime stage -----------------------------------------------------------
-FROM nginx:1.27.5-alpine3.21 AS runtime
+FROM nginx:1.30.5-alpine3.24 AS runtime
 
 # Runtime configuration (overridable per environment with -e / env:). Nothing here is secret.
 #   API_UPSTREAM               where nginx proxies /api (compose: http://backend:8000,
