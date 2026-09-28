@@ -1,23 +1,32 @@
 # AI assistance disclosure
 
-The team used AI as an engineering assistant. AI output was treated as an untrusted draft: changes
-were reviewed against the assignment, inspected in Git diffs, and accepted only after relevant
-tests or static validation. The human authors remain responsible for every submitted line and for
-explaining or modifying it in the viva.
+The team used AI as an engineering assistant. Faseeh directed the work, decided what entered the
+repository, and owns the resulting commits and engineering decisions. He used the assistant
+interactively: he asked what the assignment required, requested explanations and progress updates,
+corrected the planned division of commits between partners, and asked why each artifact was needed.
+
+The commits are recorded under the human team members' Git identities, not under an AI identity.
+Codex does not claim authorship or ownership of them. This human ownership does not mean there was
+no AI involvement: Codex materially assisted by generating implementation drafts, applying edits,
+running commands and validation, and explaining trade-offs. AI output was treated as an untrusted
+draft; the human authors remain responsible for reviewing every submitted line and for explaining
+or modifying it in the viva.
 
 ## OpenAI Codex / ChatGPT
 
-### What it helped with
+### What it assisted Faseeh with
 
 - Audited the 26-page assignment against the repository and converted the rubric into a missing-
   work checklist.
-- Drafted the production Compose file, Kubernetes base/overlays, workload probes/resources,
-  HPA/VPA/PDB configuration, kind configuration, and k6 scenario.
-- Drafted CI manifest validation, SHA-tagged GHCR publishing, SBOM/image scanning, ephemeral kind
-  deployment, Ingress smoke verification, and tagged-release workflows.
+- Assisted with implementing the production Compose file, Kubernetes base/overlays, workload
+  probes/resources, HPA/VPA/PDB configuration, kind configuration, and k6 scenario. This included
+  generating initial configuration and applying repository edits for Faseeh to review.
+- Assisted with implementing CI manifest validation, SHA-tagged GHCR publishing, SBOM/image
+  scanning, ephemeral kind deployment, Ingress smoke verification, and tagged-release workflows.
 - Drafted ADRs, triage documentation, the operations runbook, engineering notes, README updates,
   and the mechanical submission checker.
-- Suggested test and validation commands and explained the purpose of each assignment artifact.
+- Suggested and ran test/validation commands, answered implementation questions, and explained the
+  purpose of each assignment artifact while Faseeh directed the scope.
 
 ### What the team changed or verified
 
