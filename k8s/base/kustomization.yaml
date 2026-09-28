@@ -4,7 +4,6 @@ namespace: civicpulse
 resources:
   - namespace.yaml
   - configmap.yaml
-  - secret.yaml
   - postgres.yaml
   - redis.yaml
   - migration-job.yaml

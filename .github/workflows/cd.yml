@@ -53,6 +53,8 @@ jobs:
       - name: Render and validate production manifests
         run: |
           kubectl kustomize k8s/overlays/prod > "$RUNNER_TEMP/civicpulse-prod.yaml"
+          printf '\n---\n' >> "$RUNNER_TEMP/civicpulse-prod.yaml"
+          cat k8s/base/secret.yaml >> "$RUNNER_TEMP/civicpulse-prod.yaml"
           docker run --rm -v "$RUNNER_TEMP:/manifests:ro" ghcr.io/yannh/kubeconform:v0.7.0 \
             -strict -summary -ignore-missing-schemas /manifests/civicpulse-prod.yaml
 
@@ -196,7 +198,7 @@ jobs:
       - name: Apply manifests and inject the ephemeral test key
         run: |
           python scripts/ci-smoke.py prepare "$RUNNER_TEMP/civicpulse-smoke"
-          kubectl apply -f "$RUNNER_TEMP/civicpulse-prod.yaml"
+          kubectl apply -f k8s/base/namespace.yaml
           kubectl -n civicpulse create secret generic civicpulse-secrets \
             --from-literal=POSTGRES_PASSWORD=replace-me \
             --from-literal=CLERK_SECRET_KEY=sk_test_ci_placeholder \
@@ -204,7 +206,7 @@ jobs:
             --from-literal=CLERK_PUBLISHABLE_KEY=pk_test_ci_placeholder \
             --from-literal=GROQ_API_KEY=replace-me \
             --dry-run=client -o yaml | kubectl apply -f -
-          kubectl -n civicpulse rollout restart deployment/backend deployment/frontend
+          kubectl apply -f "$RUNNER_TEMP/civicpulse-prod.yaml"
       - name: Wait for migration and rollouts
         run: |
           kubectl -n civicpulse wait --for=condition=complete job/civicpulse-migrate --timeout=180s
