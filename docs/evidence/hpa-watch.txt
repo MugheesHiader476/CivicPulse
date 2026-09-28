@@ -1,0 +1,17 @@
+CivicPulse Kubernetes HPA verification
+Captured locally on 2026-09-28 after applying sustained HTTP load.
+
+Command:
+kubectl -n civicpulse get hpa backend
+
+NAME      REFERENCE            TARGETS         MINPODS   MAXPODS   REPLICAS
+backend   Deployment/backend   cpu: 302%/60%   2         10        10
+
+Command:
+kubectl -n civicpulse get deployment backend
+
+NAME      READY   UP-TO-DATE   AVAILABLE
+backend   10/10   10           10
+
+The load generator was deleted immediately after this capture. The HPA keeps ten
+replicas briefly because its configured scale-down stabilization window is 300 seconds.
