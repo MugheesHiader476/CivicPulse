@@ -14,9 +14,9 @@ LOW = ("minor", "when possible", "cosmetic")
 INJECTION = re.compile(r"(?:ignore|disregard|forget)\b[^.\n]*(?:instruction|prompt|rules|mark this as)[^.\n]*\.?", re.IGNORECASE)
 
 
-def _category_score(text: str, terms: tuple[str, ...]) -> int:
-    """Score only standalone keyword tokens and phrases, never arbitrary substrings."""
-    return sum(len(term) for term in terms if re.search(rf"\b{re.escape(term)}\b", text))
+def _contains_category_term(text: str, term: str) -> bool:
+    """Match complete words or phrases so `road` does not classify `broadband`."""
+    return re.search(rf"(?<!\w){re.escape(term)}(?!\w)", text) is not None
 
 
 class RuleBasedTriage:
@@ -25,7 +25,10 @@ class RuleBasedTriage:
     def triage(self, text: str, location: str) -> TriageResult:
         clean = " ".join(INJECTION.sub("", text).split())
         lowered = clean.lower()
-        scores = {category: _category_score(lowered, words) for category, words in KEYWORDS.items()}
+        scores = {
+            category: sum(len(word) for word in words if _contains_category_term(lowered, word))
+            for category, words in KEYWORDS.items()
+        }
         category = max(scores, key=lambda item: scores[item]) if any(scores.values()) else Category.other
         priority = Priority.high if any(word in lowered for word in HIGH) else Priority.low if any(word in lowered for word in LOW) else Priority.normal
         summary = f"{category.value.title()} issue at {location}: {clean.split('.')[0].strip()}"

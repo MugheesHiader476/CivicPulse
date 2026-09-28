@@ -2,14 +2,14 @@ from app.providers.triage.rules import RuleBasedTriage
 from app.schemas import Category
 
 
-def test_unrelated_substrings_do_not_trigger_a_category() -> None:
-    result = RuleBasedTriage().triage("Broadband internet is unavailable", "Town Centre")
+def test_category_keywords_do_not_match_inside_unrelated_words() -> None:
+    result = RuleBasedTriage().triage("Broadband service has been unavailable since morning", "Model Town")
 
     assert result.category is Category.other
 
 
-def test_category_scoring_keeps_phrase_and_token_matches() -> None:
-    triage = RuleBasedTriage()
+def test_multiword_and_whole_word_road_terms_still_match() -> None:
+    provider = RuleBasedTriage()
 
-    assert triage.triage("The street light is dark", "Block B").category is Category.streetlights
-    assert triage.triage("Pothole on the service road", "Canal Road").category is Category.roads
+    assert provider.triage("Street light is dark", "Block A").category is Category.streetlights
+    assert provider.triage("Pothole on the service road", "Canal Road").category is Category.roads
