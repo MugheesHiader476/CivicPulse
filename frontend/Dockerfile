@@ -3,7 +3,7 @@
 # reach the final image. The same image runs in every environment; see nginx/default.conf.template.
 
 # ---- build stage -------------------------------------------------------------
-FROM node:22.20.0-alpine3.22 AS build
+FROM node:22.22.2-alpine3.23 AS build
 WORKDIR /app
 
 # Dependencies first, so this layer is cached until package*.json changes.
