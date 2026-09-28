@@ -38,19 +38,31 @@ the Ingress routes for `/` and `/api`.
 
 ## Quick start
 
-Create a Clerk application, then run `clerk env pull` in `frontend/` to create
-`frontend/.env.local`. With Docker running, from this directory:
+With Git, Docker Desktop, and Bash available, a new evaluator can clone the repository and run:
 
 ```bash
+git clone https://github.com/MugheesHiader476/CivicPulse.git
+cd CivicPulse
 bash scripts/dev-up.sh
 ```
 
 The script creates a private `.env` with a random database password if one does not exist,
-builds images, applies Alembic migrations, and seeds 30 complaints. If you already have a
-`.env`, set a nonempty `POSTGRES_PASSWORD` there. Open <http://127.0.0.1:8080/sign-in>.
-A signed-in citizen sees only **Report** and **My reports**. Citizens submit complaints; administrators review them, change their status, and see city-wide numbers. An administrator sees only **Admin** (the complaint board) and **Stats** and lands on the board after sign-in. Admin accounts cannot submit complaints. To grant admin access, add the Clerk user ID of each administrator to `CLERK_OPERATOR_USER_IDS` in `.env` (comma separated), then rerun the script. The API enforces the same role split.
+builds images, waits for PostgreSQL and Redis, applies Alembic migrations, and seeds 30 complaints.
+It prints two local evaluation links: `/?demo_role=citizen` and `/?demo_role=operator`. No account
+or third-party secret is required for this local demo. The fixed demo identities are accepted only
+when `AUTH_MODE=demo`; production Compose and Kubernetes explicitly enforce `AUTH_MODE=clerk`.
 
-The placeholder is in `.env.example`: replace `user_replace_with_admin_clerk_id` with the administrator's user ID from the Clerk Dashboard. Sign in at `/sign-in` using that Clerk account to open Admin and Stats. Use a different, non-allowlisted Clerk account to submit and track reports. This setting takes user IDs, not an email address, password, Clerk secret, or publishable key. The script derives the exact Clerk frontend API origin from the publishable key for nginx's content security policy.
+A citizen sees only **Report** and **My reports**. Citizens submit complaints; operators review
+them, change their status, and see city-wide numbers. An operator sees only **Admin** and **Stats**.
+The API enforces the same role split rather than trusting the browser.
+
+To test real Clerk authentication locally, set `AUTH_MODE=clerk` in `.env`, create a Clerk
+application, and run `clerk env pull` in `frontend/` to create the ignored
+`frontend/.env.local`. Add operator Clerk user IDs to `CLERK_OPERATOR_USER_IDS`, then rerun the
+script. The script derives the exact Clerk frontend API origin for nginx's content security policy.
+
+The production placeholder is in `.env.example`. `CLERK_OPERATOR_USER_IDS` takes user IDs, not
+an email address, password, Clerk secret, or publishable key.
 
 Reports created before the ownership migration (including seeded sample reports) have no linked account and appear only in Admin. New reports are linked to their submitting account. The normal startup script applies the migration; for an existing deployment run `alembic upgrade head` before accepting submissions.
 
@@ -62,8 +74,9 @@ See [backend README](backend/README.md) for access policy, API behavior and test
 
 ## API contract
 
-All `/api` endpoints require a verified Clerk session. `operator` means the user ID is present in
-`CLERK_OPERATOR_USER_IDS`; citizens can access only their own reports.
+All `/api` endpoints require a verified Clerk session in deployed environments. Explicit local demo
+mode uses two fixed evaluation identities. In both modes, `operator` means the user ID is present
+in `CLERK_OPERATOR_USER_IDS`; citizens can access only their own reports.
 
 | Method | Path | Access | Behavior |
 |---|---|---|---|
@@ -152,6 +165,9 @@ both emergency and declarative rollback.
 - [Operations runbook](docs/RUNBOOK.md)
 - [Engineering notes](docs/ENGINEERING-NOTES.md)
 - [AI assistance disclosure](docs/AI-USAGE.md)
+- [Submission report source and rubric checklist](docs/SUBMISSION-REPORT.md)
+- [Screenshot and evidence capture guide](docs/EVIDENCE-GUIDE.md)
+- [Three-contribution partner handoff](docs/PARTNER-HANDOFF.md)
 
 The implementation now includes the application, production Compose, Kubernetes, CI, CD, release,
 and load-test definitions. Real branch-protection/conflict screenshots, HPA/VPA captures, scaling
