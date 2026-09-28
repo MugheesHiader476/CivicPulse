@@ -26,6 +26,9 @@ database credentials, or private signing keys may be included.
 | `hpa-load.png` | The backend HPA scales under a real k6 load test. |
 | `scaling-chart.png` | Replica changes are plotted from the captured HPA watch timestamps rather than invented data. |
 | `ci-green.png` | GitHub Actions CI succeeds for commit `471f524` on `dev`, including tests, lint/type checks, manifests, builds, integration, and image scans. |
+| `blocked-merge.png` | A deliberately failing backend check and missing approval prevent PR #19 from merging. |
+| `green-pipeline.png` | The same release PR passes all nine required pull-request jobs after the repair. |
+| `branch-protection.png` | The active ruleset targets `main`, requires PR/check gates, and blocks deletion/force-push. |
 | `hpa-watch.txt` | Raw timestamped HPA observations used for autoscaling analysis. |
 | `hpa-timeline.csv` | Normalized autoscaling observations used to generate the scaling chart. |
 | `k6-summary.txt` | Load-test totals, failure rate, and response-time measurements. |
@@ -35,10 +38,6 @@ database credentials, or private signing keys may be included.
 
 The following evidence must come from later real actions and must not be fabricated:
 
-- branch-protection settings and a required check visibly blocking a merge;
-- at least five reviewed pull requests linked to their issues;
-- a real merge-conflict discussion and resolution;
-- final Git graph and balanced author statistics;
 - successful CD deployment for the final `main` SHA;
 - published backend/frontend GHCR packages;
 - generated GitHub Release with release notes and attached SBOMs;

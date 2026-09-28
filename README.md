@@ -180,9 +180,9 @@ both emergency and declarative rollback.
 
 The implementation now includes the application, production Compose, Kubernetes, CI, CD, release,
 and load-test definitions. Real HPA/VPA output, a scaling chart, application captures, clean-clone
-Docker evidence, and a green CI run are catalogued in `docs/evidence/`. Branch-protection/conflict
-screenshots, the successful final CD/GHCR links, and the demo video must still come from real final
-GitHub runs before submission; they are not fabricated in this repository.
+Docker evidence, protected red-to-green CI, branch-protection settings, and conflict evidence are
+catalogued in `docs/evidence/`. The successful final CD/GHCR/release links and demo video must still
+come from real post-merge runs before submission; they are not fabricated in this repository.
 
 Run the mechanical preflight from the repository root:
 

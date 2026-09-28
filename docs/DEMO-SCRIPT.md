@@ -7,7 +7,7 @@ file open beside the terminal and paste the commands. Do not show `.env`, keys, 
 
 - Citizen: `http://127.0.0.1:8080/?demo_role=citizen`
 - Operator: `http://127.0.0.1:8080/?demo_role=operator`
-- Green CI: `https://github.com/MugheesHiader476/CivicPulse/actions/runs/36442947082`
+- Green CI: `https://github.com/MugheesHiader476/CivicPulse/actions/runs/36477603582`
 - CD workflow: `https://github.com/MugheesHiader476/CivicPulse/actions/workflows/cd.yml`
 - Scaling chart: `docs/evidence/scaling-chart.png`
 

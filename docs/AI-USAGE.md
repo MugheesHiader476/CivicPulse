@@ -48,9 +48,7 @@ or modifying it in the viva.
 ## Human review still required before submission
 
 - Both partners must read every changed file and rehearse the related viva explanation.
-- Run the complete workflows on GitHub and a real Docker/kind environment; local static checks do
-  not prove a rollout or autoscaling event.
-- Replace the two clearly marked evidence placeholders in `docs/ENGINEERING-NOTES.md` with actual
-  measurements and the team's real failure account.
-- Add any other AI tools or conversations used for the earlier frontend/backend work. Do not imply
-  that this file covers tools that were not disclosed to the reviewer who drafted it.
+- Mughees must genuinely review and approve the final protected-main PR after its last push.
+- The team must record the two-person demo and add its real URL to the submitted report.
+- Add any other AI tools or conversations used for earlier frontend/backend work. Do not imply that
+  this file covers tools that were not disclosed to the reviewer who drafted it.
