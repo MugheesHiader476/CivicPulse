@@ -49,6 +49,11 @@ spec:
               value: civicpulse
             - name: POSTGRES_USER
               value: civicpulse
+            # Keep the database cluster in a child directory owned by postgres.
+            # Some Kubernetes volume providers do not allow chmod on the mount
+            # root, which otherwise prevents the official image from starting.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:

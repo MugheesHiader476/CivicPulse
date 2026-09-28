@@ -17,3 +17,9 @@ patches:
       - op: replace
         path: /data/APP_ENV
         value: development
+      - op: replace
+        path: /data/AUTH_MODE
+        value: demo
+      - op: replace
+        path: /data/CLERK_OPERATOR_USER_IDS
+        value: demo_operator
