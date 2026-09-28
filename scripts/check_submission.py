@@ -43,7 +43,6 @@ def require_paths() -> None:
         "docs/AI-USAGE.md",
         "docs/TRIAGE.md",
         "docs/EVIDENCE-GUIDE.md",
-        "docs/PARTNER-HANDOFF.md",
         "docs/SUBMISSION-REPORT.md",
         "docs/adr/0001-provider-interface.md",
         "docs/adr/0002-frontend-runtime-config.md",
@@ -78,7 +77,7 @@ def check_history() -> None:
     if total < 35:
         ERRORS.append(f"commit floor not met: {total}/35 commits")
 
-    author_lines = git("log", "--all", "--format=%an").splitlines()
+    author_lines = git("log", "--all", "--use-mailmap", "--format=%aN").splitlines()
     counts = Counter(author_lines)
     for author, count in counts.most_common():
         share = count / total * 100 if total else 0

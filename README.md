@@ -177,7 +177,6 @@ both emergency and declarative rollback.
 - [Submission report source and rubric checklist](docs/SUBMISSION-REPORT.md)
 - [Screenshot and evidence capture guide](docs/EVIDENCE-GUIDE.md)
 - [Under-five-minute demo script and commands](docs/DEMO-SCRIPT.md)
-- [Three-contribution partner handoff](docs/PARTNER-HANDOFF.md)
 
 The implementation now includes the application, production Compose, Kubernetes, CI, CD, release,
 and load-test definitions. Real HPA/VPA output, a scaling chart, application captures, clean-clone
