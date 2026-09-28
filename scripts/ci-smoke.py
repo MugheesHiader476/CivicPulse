@@ -4,7 +4,6 @@ import argparse
 import os
 import time
 from pathlib import Path
-from urllib.parse import urlsplit
 
 import httpx
 import jwt
@@ -12,26 +11,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
+KIND_BASE_URL = "http://civicpulse.local:8080"
 USER_ID = "ci_operator"
 CITIZEN_ID = "ci_citizen"
-ALLOWED_SMOKE_HOSTS = {"127.0.0.1", "localhost", "civicpulse.local"}
-
-
-def validated_base_url(value: str) -> str:
-    """Restrict the CI smoke client to the local ephemeral deployment."""
-    parsed = urlsplit(value.rstrip("/"))
-    if (
-        parsed.scheme != "http"
-        or parsed.hostname not in ALLOWED_SMOKE_HOSTS
-        or parsed.port != 8080
-        or parsed.username is not None
-        or parsed.password is not None
-        or parsed.path not in ("", "/")
-        or parsed.query
-        or parsed.fragment
-    ):
-        raise ValueError("smoke base URL must be an approved local HTTP host on port 8080")
-    return value.rstrip("/")
 
 
 def prepare(directory: Path) -> None:
@@ -59,8 +41,21 @@ def expect(response: httpx.Response, status: int) -> dict:
     return response.json()
 
 
+def wait_for_kind() -> None:
+    """Wait for the fixed, local kind ingress endpoint to accept traffic."""
+    for attempt in range(36):
+        try:
+            response = httpx.get(f"{KIND_BASE_URL}/healthz", timeout=5)
+            if response.is_success:
+                return
+        except httpx.RequestError:
+            pass
+        if attempt == 35:
+            raise TimeoutError("kind ingress did not become ready within three minutes")
+        time.sleep(5)
+
+
 def verify(directory: Path, base_url: str = DEFAULT_BASE_URL, expected_provider: str = "simulated") -> None:
-    base_url = validated_base_url(base_url)
     private_key = serialization.load_pem_private_key(
         (directory / "civicpulse-ci-private.pem").read_bytes(), password=None,
     )
@@ -110,12 +105,13 @@ def verify(directory: Path, base_url: str = DEFAULT_BASE_URL, expected_provider:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("prepare", "verify"))
+    parser.add_argument("action", choices=("prepare", "verify-compose", "verify-kind"))
     parser.add_argument("directory", type=Path)
-    parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
-    parser.add_argument("--expected-provider", default="simulated")
     args = parser.parse_args()
     if args.action == "prepare":
         prepare(args.directory)
+    elif args.action == "verify-kind":
+        wait_for_kind()
+        verify(args.directory, KIND_BASE_URL, "rules")
     else:
-        verify(args.directory, args.base_url, args.expected_provider)
+        verify(args.directory)

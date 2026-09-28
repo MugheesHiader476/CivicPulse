@@ -217,18 +217,7 @@ jobs:
       - name: Smoke-test through the Ingress
         run: |
           echo "127.0.0.1 civicpulse.local" | sudo tee -a /etc/hosts
-          for attempt in {1..36}; do
-            if curl --fail --silent http://civicpulse.local:8080/healthz >/dev/null; then # NOSONAR - ephemeral kind ingress
-              break
-            fi
-            if [ "$attempt" -eq 36 ]; then
-              kubectl -n civicpulse get all
-              exit 1
-            fi
-            sleep 5
-          done
-          python scripts/ci-smoke.py verify "$RUNNER_TEMP/civicpulse-smoke" \
-            --base-url http://civicpulse.local:8080 --expected-provider rules # NOSONAR - validated local smoke target
+          python scripts/ci-smoke.py verify-kind "$RUNNER_TEMP/civicpulse-smoke"
       - name: Print deployment and autoscaling state
         if: always()
         run: |

@@ -185,7 +185,7 @@ jobs:
           docker compose ps
           exit 1
       - name: Check authenticated request path and Redis cache
-        run: python scripts/ci-smoke.py verify "$RUNNER_TEMP"
+        run: python scripts/ci-smoke.py verify-compose "$RUNNER_TEMP"
       - name: Show container logs if smoke fails
         if: failure()
         run: docker compose logs --no-color --tail=120
