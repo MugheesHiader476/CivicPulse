@@ -1,0 +1,16 @@
+CivicPulse k6 load-test summary
+Command: k6 run load/k6-script.js
+Captured: 2026-09-28
+
+checks_total:       150559
+checks_succeeded:   100.00% (150559/150559)
+checks_failed:      0.00% (0/150559)
+http_reqs:          150559 (501.717345/s)
+http_req_failed:    0.00% (0/150559)
+http_req_duration:  avg=90.81ms, p90=208.59ms, p95=252.38ms, max=478.96ms
+iterations:         150559
+virtual users:      min=1, observed max=199, configured max=200
+
+Thresholds passed:
+- http_req_failed rate < 0.01
+- http_req_duration p(95) < 1000ms

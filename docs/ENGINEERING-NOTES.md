@@ -60,20 +60,19 @@ and schema rejection are repeatable.
 
 ## 5. Measured HPA lag
 
-**Pending real cluster evidence - Mughees commit.** Run `load/k6-script.js` while capturing
-`kubectl get hpa backend -w`, then record:
+The real kind test used the committed `load/k6-script.js`: 150,559 requests completed with zero
+failures and p95 latency of 252.38 ms. The timestamped capture in
+`docs/evidence/hpa-timeline.csv` began with two replicas. CPU first appeared above the 60% target
+at 19:46:01, and the first replica increase appeared at 19:46:22, an observed 21-second lag. The
+deployment then grew 2 -> 3 -> 4 -> 5 -> 7 -> 9 while k6 increased toward 200 virtual users.
 
-- offered load start time;
-- first metrics change;
-- first desired-replica change;
-- first new backend pod Ready time;
-- measured lag in seconds and the portions spent in metrics sampling, HPA reconciliation,
-  scheduling, image/container start, and readiness.
-
-Do not replace this section with an invented value. The current design has immediate scale-up
-stabilization and a 300-second scale-down window (`k8s/base/hpa.yaml:24` and `:34`). Faster
-metrics/reconciliation and pre-pulled smaller images can reduce scale-up lag; none removes the
-need for baseline capacity.
+That lag includes the metrics-server sampling interval, HPA reconciliation, scheduling, container
+start, and readiness; the five-second observation interval limits precision. The HPA has immediate
+scale-up stabilization and a 300-second scale-down window (`k8s/base/hpa.yaml:24` and `:34`), so it
+deliberately retained nine replicas after traffic stopped. Faster metrics/reconciliation and
+pre-pulled smaller images can reduce scale-up lag; none removes the need for baseline capacity.
+The raw timeline, k6 summary, VPA recommendation, and generated chart are committed under
+`docs/evidence/`.
 
 ## 6. Why VPA is Off
 
