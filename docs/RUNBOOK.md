@@ -16,6 +16,11 @@ and smoke-tests the Ingress. Do not deploy `latest`.
 
 ## Create the local cluster
 
+This project uses **kind** (Kubernetes in Docker), matching the disposable cluster used by GitHub
+Actions. Docker Desktop supplies the Docker engine, but its separate built-in Kubernetes cluster
+does not need to be enabled. After creation, `kubectl config current-context` must print
+`kind-civicpulse`; enabling another local cluster can silently switch the active context.
+
 ```bash
 kind create cluster --name civicpulse --config .github/kind-config.yaml
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml

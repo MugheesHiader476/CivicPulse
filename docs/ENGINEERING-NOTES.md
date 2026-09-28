@@ -98,16 +98,31 @@ owns the hosted provider call must also have a controlled non-internal route.
 
 ## 8. The failure that cost more than an hour
 
-**Pending an honest team account - Mughees commit.** Write the actual incident using this shape:
+During the first real kind deployment on 28 September, PostgreSQL stayed in `CrashLoopBackOff`,
+which left the migration job at `Init:0/1` and both backend replicas failing readiness. The first
+working theory was that the dynamically provisioned volume had not been assigned `fsGroup: 70`,
+because the StatefulSet already ran the Alpine image as UID/GID 70. Reapplying the StatefulSet and
+waiting for its rollout did not change the existing failing pod.
 
-- symptom and first timestamp;
-- initial belief and why it seemed plausible;
-- unsuccessful checks;
-- exact command or log line that disproved the belief;
-- root cause, fix, and a test/guard that now prevents recurrence.
+`kubectl -n civicpulse logs postgres-0 --previous` supplied the decisive evidence:
 
-Generic Kubernetes folklore or an invented failure scores zero. Use a real event from the cluster,
-CI/CD, authentication, networking, or provider work and cite its evidence file.
+```text
+chmod: /var/lib/postgresql/data: Operation not permitted
+initdb: error: could not change permissions of directory "/var/lib/postgresql/data"
+```
+
+The volume provider exposed a mount root that the non-root PostgreSQL process could write through
+the assigned group but could not itself `chmod`. The fix sets
+`PGDATA=/var/lib/postgresql/data/pgdata`, allowing PostgreSQL to create and own a child directory
+while preserving the non-root container policy. Because StatefulSet rolling replacement was
+waiting on the unhealthy old revision, the already-empty failed pod was deleted once; its
+controller recreated it from the new template. PostgreSQL became Ready, migration completed, and
+both backend replicas passed readiness.
+
+The guard is operational and repeatable: the local/CD deployment waits for the PostgreSQL
+StatefulSet, migration Job, and backend rollout. The verified persistence test then deleted
+`postgres-0` after creating a complaint. The recreated pod returned that same complaint through
+Ingress, proving that the child `PGDATA` directory remained on the bound PVC.
 
 ## Data and cache choices
 

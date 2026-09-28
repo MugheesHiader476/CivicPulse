@@ -69,7 +69,7 @@ kubectl -n civicpulse get all,ingress,pvc
 kubectl -n civicpulse get pods
 kubectl -n civicpulse get hpa backend
 kubectl -n civicpulse describe hpa backend
-kubectl -n civicpulse get vpa backend -o yaml
+kubectl -n civicpulse get vpa backend-vpa -o yaml
 ```
 
 Save the stable deployment as `k8s-resources.png`, probes/rollouts as `k8s-rollouts.png`, initial HPA
