@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
-KIND_BASE_URL = "http://civicpulse.local:8080"
+KIND_BASE_URL = "http://civicpulse.local:8080"  # NOSONAR - ephemeral local kind ingress has no TLS endpoint
 USER_ID = "ci_operator"
 CITIZEN_ID = "ci_citizen"
 
