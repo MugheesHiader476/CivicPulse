@@ -30,9 +30,11 @@ Use a fresh directory, not the existing checkout:
 ```bash
 git clone https://github.com/MugheesHiader476/CivicPulse.git CivicPulse-clean
 cd CivicPulse-clean
-bash scripts/dev-up.sh
 docker compose ps
 ```
+
+On Windows PowerShell, run `./scripts/dev-up.ps1` before `docker compose ps`. On Linux or macOS,
+run `bash scripts/dev-up.sh`. Capture the native command used by the evaluator.
 
 Capture `docker compose ps` with every service healthy/completed as `docker-compose-healthy.png`.
 Open both printed URLs and capture a submitted citizen complaint (`citizen-submit.png`) and the

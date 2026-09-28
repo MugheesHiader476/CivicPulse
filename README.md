@@ -38,7 +38,16 @@ the Ingress routes for `/` and `/api`.
 
 ## Quick start
 
-With Git, Docker Desktop, and Bash available, a new evaluator can clone the repository and run:
+With Git and Docker Desktop available, a Windows evaluator can clone the repository and run from
+PowerShell:
+
+```powershell
+git clone https://github.com/MugheesHiader476/CivicPulse.git
+cd CivicPulse
+./scripts/dev-up.ps1
+```
+
+On Linux or macOS, use the Bash launcher:
 
 ```bash
 git clone https://github.com/MugheesHiader476/CivicPulse.git
