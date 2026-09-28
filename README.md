@@ -176,12 +176,14 @@ both emergency and declarative rollback.
 - [AI assistance disclosure](docs/AI-USAGE.md)
 - [Submission report source and rubric checklist](docs/SUBMISSION-REPORT.md)
 - [Screenshot and evidence capture guide](docs/EVIDENCE-GUIDE.md)
+- [Under-five-minute demo script and commands](docs/DEMO-SCRIPT.md)
 - [Three-contribution partner handoff](docs/PARTNER-HANDOFF.md)
 
 The implementation now includes the application, production Compose, Kubernetes, CI, CD, release,
-and load-test definitions. Real branch-protection/conflict screenshots, HPA/VPA captures, scaling
-chart, successful CD/GHCR links, and the demo video must be produced from actual GitHub and cluster
-runs before submission; they are not fabricated in this repository.
+and load-test definitions. Real HPA/VPA output, a scaling chart, application captures, clean-clone
+Docker evidence, and a green CI run are catalogued in `docs/evidence/`. Branch-protection/conflict
+screenshots, the successful final CD/GHCR links, and the demo video must still come from real final
+GitHub runs before submission; they are not fabricated in this repository.
 
 Run the mechanical preflight from the repository root:
 
