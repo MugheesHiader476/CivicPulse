@@ -4,6 +4,7 @@ metadata:
   name: civicpulse-config
 data:
   APP_ENV: production
+  AUTH_MODE: clerk
   DASHBOARD_REFRESH_SECONDS: "15"
   CLERK_AUTHORIZED_PARTIES: http://civicpulse.local,http://civicpulse.local:8080,http://127.0.0.1:8080
   CLERK_FRONTEND_API_ORIGIN: https://replace-me.clerk.accounts.dev

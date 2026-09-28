@@ -13,6 +13,8 @@ export interface RuntimeConfig {
   refreshSeconds: number;
   /** Public Clerk application identifier, supplied at runtime; never a secret key. */
   clerkPublishableKey: string;
+  /** Authentication boundary: Clerk in deployed environments, fixed identities for local demos. */
+  authMode: "clerk" | "demo";
 }
 
 declare global {
@@ -25,6 +27,7 @@ export const DEFAULT_CONFIG: RuntimeConfig = Object.freeze({
   environment: "unknown",
   refreshSeconds: 15,
   clerkPublishableKey: "",
+  authMode: "clerk",
 });
 
 const MIN_REFRESH_SECONDS = 5;
@@ -48,8 +51,9 @@ export function readRuntimeConfig(source: unknown): RuntimeConfig {
 
   const key = raw.clerkPublishableKey;
   const clerkPublishableKey = typeof key === "string" && /^pk_(test|live)_[A-Za-z0-9_=-]+$/.test(key) ? key : "";
+  const authMode = raw.authMode === "demo" ? "demo" : "clerk";
 
-  return { environment, refreshSeconds, clerkPublishableKey };
+  return { environment, refreshSeconds, clerkPublishableKey, authMode };
 }
 
 export const runtimeConfig: RuntimeConfig = readRuntimeConfig(

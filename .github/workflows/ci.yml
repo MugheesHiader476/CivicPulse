@@ -153,6 +153,7 @@ jobs:
     timeout-minutes: 25
     env:
       COMPOSE_PROJECT_NAME: civicpulse-ci-${{ github.run_id }}
+      AUTH_MODE: clerk
       POSTGRES_PASSWORD: ci-only-disposable-password
       CLERK_SECRET_KEY: sk_test_ci_placeholder
       CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder

@@ -3,6 +3,7 @@
 #   ${API_UPSTREAM}              backend base URL, e.g. http://backend:8000
 #   ${APP_ENV}                   environment label for the UI
 #   ${DASHBOARD_REFRESH_SECONDS} live dashboard polling interval
+#   ${AUTH_MODE}                 "clerk" for deployments or "demo" for local evaluation
 #   ${CLERK_FRONTEND_API_ORIGIN} exact Clerk frontend API origin for CSP
 #   ${NGINX_LOCAL_RESOLVERS}     DNS servers from /etc/resolv.conf (set by the entrypoint)
 
@@ -31,7 +32,7 @@ server {
         default_type application/javascript;
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "no-store" always;
-        return 200 'window.__CIVICPULSE_CONFIG__ = Object.freeze({"environment":"${APP_ENV}","refreshSeconds":"${DASHBOARD_REFRESH_SECONDS}","clerkPublishableKey":"${CLERK_PUBLISHABLE_KEY}"});\n';
+        return 200 'window.__CIVICPULSE_CONFIG__ = Object.freeze({"environment":"${APP_ENV}","refreshSeconds":"${DASHBOARD_REFRESH_SECONDS}","clerkPublishableKey":"${CLERK_PUBLISHABLE_KEY}","authMode":"${AUTH_MODE}"});\n';
     }
 
     # Same-origin API: the browser calls /api/..., nginx forwards it unchanged. No CORS, no backend URL

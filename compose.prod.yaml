@@ -3,6 +3,7 @@ name: civicpulse
 x-backend-environment: &backend-environment
   DATABASE_URL: postgresql+psycopg://civicpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/civicpulse
   REDIS_URL: redis://redis:6379/0
+  AUTH_MODE: clerk
   CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?set CLERK_SECRET_KEY}
   CLERK_JWT_KEY: ${CLERK_JWT_KEY:-}
   CLERK_AUTHORIZED_PARTIES: ${CLERK_AUTHORIZED_PARTIES:?set CLERK_AUTHORIZED_PARTIES}
@@ -107,6 +108,7 @@ services:
     environment:
       API_UPSTREAM: http://backend:8000
       APP_ENV: production
+      AUTH_MODE: clerk
       DASHBOARD_REFRESH_SECONDS: ${DASHBOARD_REFRESH_SECONDS:-15}
       CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?set CLERK_PUBLISHABLE_KEY}
       CLERK_FRONTEND_API_ORIGIN: ${CLERK_FRONTEND_API_ORIGIN:?set CLERK_FRONTEND_API_ORIGIN}

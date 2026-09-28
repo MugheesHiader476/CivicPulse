@@ -26,6 +26,27 @@ def test_invalid_rate_limit_and_proxy_network_fail_at_startup(monkeypatch):
         Settings.from_env()
 
 
+def test_demo_auth_starts_without_clerk_credentials(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "sqlite://")
+    monkeypatch.setenv("REDIS_URL", "redis://")
+    monkeypatch.setenv("AUTH_MODE", "demo")
+    monkeypatch.delenv("CLERK_SECRET_KEY", raising=False)
+    monkeypatch.delenv("CLERK_AUTHORIZED_PARTIES", raising=False)
+
+    settings = Settings.from_env()
+    assert settings.auth_mode == "demo"
+    assert settings.clerk_secret_key == ""
+
+
+def test_clerk_auth_still_requires_credentials(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "sqlite://")
+    monkeypatch.setenv("REDIS_URL", "redis://")
+    monkeypatch.setenv("AUTH_MODE", "clerk")
+    monkeypatch.delenv("CLERK_SECRET_KEY", raising=False)
+    with pytest.raises(ValueError, match="CLERK_SECRET_KEY"):
+        Settings.from_env()
+
+
 def test_malformed_programmatic_proxy_setting_fails_closed():
     request = SimpleNamespace(
         client=SimpleNamespace(host="172.28.10.2"),

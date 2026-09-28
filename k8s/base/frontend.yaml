@@ -62,6 +62,11 @@ spec:
                 configMapKeyRef:
                   name: civicpulse-config
                   key: DASHBOARD_REFRESH_SECONDS
+            - name: AUTH_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: civicpulse-config
+                  key: AUTH_MODE
             - name: CLERK_FRONTEND_API_ORIGIN
               valueFrom:
                 configMapKeyRef:

@@ -20,6 +20,8 @@ import { StatsPage } from "./pages/StatsPage";
 import { SubmitPage } from "./pages/SubmitPage";
 
 const mockToken: SessionTokenGetter = async () => "mock-session";
+const demoCitizenToken: SessionTokenGetter = async () => "demo-citizen";
+const demoOperatorToken: SessionTokenGetter = async () => "demo-operator";
 
 /** Resets the boundary on navigation, so one crashed view does not trap the user. */
 function AppRoutes({ isOperator }: { isOperator: boolean }) {
@@ -101,7 +103,20 @@ function ClerkRoutes() {
   return <Workspace key={sessionId ?? "signed-in"} getToken={getToken} />;
 }
 
+function DemoRoutes() {
+  const [isOperator] = useState(() => {
+    const selected = new URLSearchParams(window.location.search).get("demo_role");
+    if (selected === "operator" || selected === "citizen") {
+      window.sessionStorage.setItem("civicpulse-demo-role", selected);
+      return selected === "operator";
+    }
+    return window.sessionStorage.getItem("civicpulse-demo-role") === "operator";
+  });
+  return <Workspace getToken={isOperator ? demoOperatorToken : demoCitizenToken} />;
+}
+
 /** BrowserRouter is provided at the entry point so Clerk can share its navigation history. */
-export function App({ mockAuth = false }: { mockAuth?: boolean }) {
-  return mockAuth ? <Workspace getToken={mockToken} mockAuth /> : <ClerkRoutes />;
+export function App({ mockAuth = false, demoAuth = false }: { mockAuth?: boolean; demoAuth?: boolean }) {
+  if (mockAuth) return <Workspace getToken={mockToken} mockAuth />;
+  return demoAuth ? <DemoRoutes /> : <ClerkRoutes />;
 }
