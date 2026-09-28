@@ -83,8 +83,26 @@ jobs:
         working-directory: frontend
         run: npm test
 
+  manifests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.33.4
+      - name: Render production manifests
+        run: kubectl kustomize k8s/overlays/prod > "$RUNNER_TEMP/civicpulse-prod.yaml"
+      - name: Validate Kubernetes schemas
+        run: >-
+          docker run --rm
+          -v "$RUNNER_TEMP:/manifests:ro"
+          ghcr.io/yannh/kubeconform:v0.7.0
+          -strict -summary -ignore-missing-schemas
+          /manifests/civicpulse-prod.yaml
+
   build:
-    needs: [lint-and-type, test-backend, test-frontend]
+    needs: [lint-and-type, test-backend, test-frontend, manifests]
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
