@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
 import pytest
-
 from app.config import Settings
 from app.security import client_ip
 
