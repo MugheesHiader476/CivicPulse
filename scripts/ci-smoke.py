@@ -10,7 +10,7 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-BASE_URL = "http://127.0.0.1:8080"
+DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 USER_ID = "ci_operator"
 CITIZEN_ID = "ci_citizen"
 
@@ -40,7 +40,8 @@ def expect(response: httpx.Response, status: int) -> dict:
     return response.json()
 
 
-def verify(directory: Path) -> None:
+def verify(directory: Path, base_url: str = DEFAULT_BASE_URL, expected_provider: str = "simulated") -> None:
+    base_url = base_url.rstrip("/")
     private_key = serialization.load_pem_private_key(
         (directory / "civicpulse-ci-private.pem").read_bytes(), password=None,
     )
@@ -52,22 +53,22 @@ def verify(directory: Path) -> None:
             "iss": "https://test.clerk.accounts.dev",
             "sub": user_id,
             "sid": f"sess_{user_id}",
-            "azp": BASE_URL,
+            "azp": base_url,
             "iat": now,
             "nbf": now,
             "exp": now + 300,
         }, private_key, algorithm="RS256")
 
     with (
-        httpx.Client(base_url=BASE_URL, headers={"Authorization": f"Bearer {token(USER_ID)}"}, timeout=15) as admin,
-        httpx.Client(base_url=BASE_URL, headers={"Authorization": f"Bearer {token(CITIZEN_ID)}"}, timeout=15) as citizen,
+        httpx.Client(base_url=base_url, headers={"Authorization": f"Bearer {token(USER_ID)}"}, timeout=15) as admin,
+        httpx.Client(base_url=base_url, headers={"Authorization": f"Bearer {token(CITIZEN_ID)}"}, timeout=15) as citizen,
     ):
         created = expect(citizen.post("/api/complaints", json={
             "text": "Burst water pipe flooding Street 12",
             "location": "Street 12, Lahore",
         }), 201)
         assert created["category"] == "water", created
-        assert created["triaged_by"] == "simulated", created
+        assert created["triaged_by"] == expected_provider, created
         complaint_id = created["id"]
         detail = expect(admin.get(f"/api/complaints/{complaint_id}"), 200)
         assert detail["id"] == complaint_id
@@ -85,15 +86,17 @@ def verify(directory: Path) -> None:
         stats = expect(second, 200)
         assert second.headers.get("X-Cache") == "HIT", second.headers
         assert stats["total"] >= 1
-    print("Compose smoke passed: citizen submit and ownership, admin access, role denials, cache MISS -> HIT.")
+    print("Deployment smoke passed: citizen submit and ownership, admin access, role denials, cache MISS -> HIT.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("prepare", "verify"))
     parser.add_argument("directory", type=Path)
+    parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
+    parser.add_argument("--expected-provider", default="simulated")
     args = parser.parse_args()
     if args.action == "prepare":
         prepare(args.directory)
     else:
-        verify(args.directory)
+        verify(args.directory, args.base_url, args.expected_provider)
