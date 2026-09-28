@@ -4,6 +4,7 @@ import argparse
 import os
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import httpx
 import jwt
@@ -13,6 +14,24 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 USER_ID = "ci_operator"
 CITIZEN_ID = "ci_citizen"
+ALLOWED_SMOKE_HOSTS = {"127.0.0.1", "localhost", "civicpulse.local"}
+
+
+def validated_base_url(value: str) -> str:
+    """Restrict the CI smoke client to the local ephemeral deployment."""
+    parsed = urlsplit(value.rstrip("/"))
+    if (
+        parsed.scheme != "http"
+        or parsed.hostname not in ALLOWED_SMOKE_HOSTS
+        or parsed.port != 8080
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in ("", "/")
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("smoke base URL must be an approved local HTTP host on port 8080")
+    return value.rstrip("/")
 
 
 def prepare(directory: Path) -> None:
@@ -41,7 +60,7 @@ def expect(response: httpx.Response, status: int) -> dict:
 
 
 def verify(directory: Path, base_url: str = DEFAULT_BASE_URL, expected_provider: str = "simulated") -> None:
-    base_url = base_url.rstrip("/")
+    base_url = validated_base_url(base_url)
     private_key = serialization.load_pem_private_key(
         (directory / "civicpulse-ci-private.pem").read_bytes(), password=None,
     )
