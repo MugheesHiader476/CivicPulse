@@ -12,4 +12,4 @@ def test_multiword_and_whole_word_road_terms_still_match() -> None:
     provider = RuleBasedTriage()
 
     assert provider.triage("Street light is dark", "Block A").category is Category.streetlights
-    assert provider.triage("Road has a large pothole", "Main Boulevard").category is Category.roads
+    assert provider.triage("Pothole on the service road", "Canal Road").category is Category.roads
