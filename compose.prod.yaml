@@ -1,10 +1,26 @@
+name: civicpulse
+
+x-backend-environment: &backend-environment
+  DATABASE_URL: postgresql+psycopg://civicpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/civicpulse
+  REDIS_URL: redis://redis:6379/0
+  CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?set CLERK_SECRET_KEY}
+  CLERK_JWT_KEY: ${CLERK_JWT_KEY:-}
+  CLERK_AUTHORIZED_PARTIES: ${CLERK_AUTHORIZED_PARTIES:?set CLERK_AUTHORIZED_PARTIES}
+  CLERK_OPERATOR_USER_IDS: ${CLERK_OPERATOR_USER_IDS:-}
+  TRIAGE_PROVIDER: ${TRIAGE_PROVIDER:-rules}
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
+  GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
+  OLLAMA_URL: http://ollama:11434
+  OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b-instruct-q4_K_M}
+  TRUSTED_PROXY_CIDRS: 172.29.10.0/24
+
 services:
   postgres:
     image: postgres:16.9-alpine3.22
     environment:
       POSTGRES_DB: civicpulse
       POSTGRES_USER: civicpulse
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks: [internal]
@@ -16,9 +32,7 @@ services:
     restart: unless-stopped
     deploy:
       resources:
-        limits:
-          cpus: "0.75"
-          memory: 768M
+        limits: {cpus: "0.75", memory: 768M}
 
   redis:
     image: redis:7.4.5-alpine3.21
@@ -34,45 +48,23 @@ services:
     restart: unless-stopped
     deploy:
       resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
+        limits: {cpus: "0.25", memory: 256M}
 
   migrate:
-    image: civicpulse-backend:local
+    image: ghcr.io/${GHCR_OWNER:?set GHCR_OWNER}/civicpulse-backend:${IMAGE_TAG:?set IMAGE_TAG}
     command: ["alembic", "upgrade", "head"]
-    environment:
-      DATABASE_URL: postgresql+psycopg://civicpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/civicpulse
+    environment: *backend-environment
     networks: [internal]
     depends_on:
       postgres: {condition: service_healthy}
     deploy:
       resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
+        limits: {cpus: "0.25", memory: 256M}
 
   backend:
-    image: civicpulse-backend:local
-    build: ./backend
-    environment:
-      DATABASE_URL: postgresql+psycopg://civicpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/civicpulse
-      REDIS_URL: redis://redis:6379/0
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?Run clerk env pull in frontend}
-      CLERK_JWT_KEY: ${CLERK_JWT_KEY:-}
-      CLERK_AUTHORIZED_PARTIES: ${CLERK_AUTHORIZED_PARTIES:-http://127.0.0.1:8080,http://localhost:8080,http://localhost:5173,http://127.0.0.1:5173}
-      CLERK_OPERATOR_USER_IDS: ${CLERK_OPERATOR_USER_IDS:-}
-      TRIAGE_PROVIDER: ${TRIAGE_PROVIDER:-rules}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
-      OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b-instruct-q4_K_M}
-      TRUSTED_PROXY_CIDRS: 172.28.10.0/24
-    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--no-access-log"]
-    volumes:
-      - ./backend/app:/app/app:ro
+    image: ghcr.io/${GHCR_OWNER:?set GHCR_OWNER}/civicpulse-backend:${IMAGE_TAG:?set IMAGE_TAG}
+    environment: *backend-environment
     networks: [edge, internal, ai]
-    ports: ["127.0.0.1:8000:8000"]
     depends_on:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
@@ -84,9 +76,7 @@ services:
     restart: unless-stopped
     deploy:
       resources:
-        limits:
-          cpus: "1.0"
-          memory: 768M
+        limits: {cpus: "1.0", memory: 768M}
 
   ollama:
     profiles: [local-ai]
@@ -107,22 +97,21 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+    restart: unless-stopped
     deploy:
       resources:
-        limits:
-          cpus: "2.0"
-          memory: 3G
-    restart: unless-stopped
+        limits: {cpus: "2.0", memory: 3G}
 
   frontend:
-    build: ./frontend
+    image: ghcr.io/${GHCR_OWNER:?set GHCR_OWNER}/civicpulse-frontend:${IMAGE_TAG:?set IMAGE_TAG}
     environment:
       API_UPSTREAM: http://backend:8000
-      APP_ENV: development
-      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?Run clerk env pull in frontend}
-      CLERK_FRONTEND_API_ORIGIN: ${CLERK_FRONTEND_API_ORIGIN:?Set exact Clerk frontend API origin}
+      APP_ENV: production
+      DASHBOARD_REFRESH_SECONDS: ${DASHBOARD_REFRESH_SECONDS:-15}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?set CLERK_PUBLISHABLE_KEY}
+      CLERK_FRONTEND_API_ORIGIN: ${CLERK_FRONTEND_API_ORIGIN:?set CLERK_FRONTEND_API_ORIGIN}
     networks: [edge]
-    ports: ["127.0.0.1:8080:8080"]
+    ports: ["${CIVICPULSE_PORT:-8080}:8080"]
     depends_on:
       backend: {condition: service_healthy}
     healthcheck:
@@ -133,20 +122,18 @@ services:
     restart: unless-stopped
     deploy:
       resources:
-        limits:
-          cpus: "0.25"
-          memory: 128M
+        limits: {cpus: "0.25", memory: 128M}
 
 networks:
   edge:
     ipam:
       config:
-        - subnet: 172.28.10.0/24
+        - subnet: 172.29.10.0/24
+  internal:
+    internal: true
   ai:
     internal: true
   model-egress: {}
-  internal:
-    internal: true
 
 volumes:
   pgdata: {}
