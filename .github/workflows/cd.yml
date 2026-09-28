@@ -1,0 +1,241 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      TRIAGE_PROVIDER: simulated
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Lint, type-check, and test backend
+        working-directory: backend
+        run: |
+          python -m ruff check app tests ../scripts/ci-smoke.py
+          python -m mypy app ../scripts/ci-smoke.py --ignore-missing-imports
+          python -m pytest -q --cov=app --cov-report=term-missing --cov-fail-under=65
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Lint, type-check, test, and build frontend
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run build
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.33.4
+      - name: Render and validate production manifests
+        run: |
+          kubectl kustomize k8s/overlays/prod > "$RUNNER_TEMP/civicpulse-prod.yaml"
+          docker run --rm -v "$RUNNER_TEMP:/manifests:ro" ghcr.io/yannh/kubeconform:v0.7.0 \
+            -strict -summary -ignore-missing-schemas /manifests/civicpulse-prod.yaml
+
+  build-push:
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      backend-image: ${{ steps.names.outputs.backend }}
+      backend-digest: ${{ steps.backend.outputs.digest }}
+      frontend-image: ${{ steps.names.outputs.frontend }}
+      frontend-digest: ${{ steps.frontend.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Define lowercase image names
+        id: names
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "backend=ghcr.io/${owner}/civicpulse-backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=ghcr.io/${owner}/civicpulse-frontend" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - name: Build and publish backend once
+        id: backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.names.outputs.backend }}:${{ github.sha }}
+            ${{ steps.names.outputs.backend }}:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - name: Build and publish frontend once
+        id: frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ steps.names.outputs.frontend }}:${{ github.sha }}
+            ${{ steps.names.outputs.frontend }}:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+      - name: Generate backend SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ steps.names.outputs.backend }}@${{ steps.backend.outputs.digest }}
+          artifact-name: civicpulse-backend-${{ github.sha }}.spdx.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate frontend SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ steps.names.outputs.frontend }}@${{ steps.frontend.outputs.digest }}
+          artifact-name: civicpulse-frontend-${{ github.sha }}.spdx.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.names.outputs.backend }}@${{ steps.backend.outputs.digest }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.names.outputs.frontend }}@${{ steps.frontend.outputs.digest }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+  deploy-k8s:
+    needs: build-push
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install smoke-test dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: helm/kind-action@v1.14.0
+        with:
+          cluster_name: civicpulse
+          config: .github/kind-config.yaml
+      - name: Load the exact published images into kind
+        env:
+          BACKEND_IMAGE: ${{ needs.build-push.outputs.backend-image }}
+          FRONTEND_IMAGE: ${{ needs.build-push.outputs.frontend-image }}
+        run: |
+          docker pull "$BACKEND_IMAGE:${GITHUB_SHA}"
+          docker pull "$FRONTEND_IMAGE:${GITHUB_SHA}"
+          kind load docker-image --name civicpulse "$BACKEND_IMAGE:${GITHUB_SHA}"
+          kind load docker-image --name civicpulse "$FRONTEND_IMAGE:${GITHUB_SHA}"
+      - name: Install ingress, metrics, and VPA controllers
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.0/components.yaml
+          kubectl patch deployment metrics-server -n kube-system --type=json \
+            -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+          git clone --depth 1 --branch vertical-pod-autoscaler-1.7.1 \
+            https://github.com/kubernetes/autoscaler.git "$RUNNER_TEMP/autoscaler"
+          "$RUNNER_TEMP/autoscaler/vertical-pod-autoscaler/hack/vpa-up.sh"
+          kubectl wait -n ingress-nginx --for=condition=Ready pod \
+            -l app.kubernetes.io/component=controller --timeout=180s
+          kubectl rollout status -n kube-system deployment/metrics-server --timeout=180s
+          kubectl rollout status -n kube-system deployment/vpa-recommender --timeout=180s
+      - name: Render the SHA-tagged production deployment
+        env:
+          BACKEND_IMAGE: ${{ needs.build-push.outputs.backend-image }}
+          FRONTEND_IMAGE: ${{ needs.build-push.outputs.frontend-image }}
+        run: |
+          kubectl kustomize k8s/overlays/prod > "$RUNNER_TEMP/civicpulse-prod.yaml"
+          sed -i "s|ghcr.io/replace-me/civicpulse-backend:replace-with-git-sha|${BACKEND_IMAGE}:${GITHUB_SHA}|g" "$RUNNER_TEMP/civicpulse-prod.yaml"
+          sed -i "s|ghcr.io/replace-me/civicpulse-frontend:replace-with-git-sha|${FRONTEND_IMAGE}:${GITHUB_SHA}|g" "$RUNNER_TEMP/civicpulse-prod.yaml"
+          grep -q "${BACKEND_IMAGE}:${GITHUB_SHA}" "$RUNNER_TEMP/civicpulse-prod.yaml"
+          grep -q "${FRONTEND_IMAGE}:${GITHUB_SHA}" "$RUNNER_TEMP/civicpulse-prod.yaml"
+      - name: Apply manifests and inject the ephemeral test key
+        run: |
+          python scripts/ci-smoke.py prepare "$RUNNER_TEMP/civicpulse-smoke"
+          kubectl apply -f "$RUNNER_TEMP/civicpulse-prod.yaml"
+          kubectl -n civicpulse create secret generic civicpulse-secrets \
+            --from-literal=POSTGRES_PASSWORD=replace-me \
+            --from-literal=CLERK_SECRET_KEY=sk_test_ci_placeholder \
+            --from-file=CLERK_JWT_KEY="$RUNNER_TEMP/civicpulse-smoke/civicpulse-ci-public.pem" \
+            --from-literal=CLERK_PUBLISHABLE_KEY=pk_test_ci_placeholder \
+            --from-literal=GROQ_API_KEY=replace-me \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n civicpulse rollout restart deployment/backend deployment/frontend
+      - name: Wait for migration and rollouts
+        run: |
+          kubectl -n civicpulse wait --for=condition=complete job/civicpulse-migrate --timeout=180s
+          kubectl -n civicpulse rollout status statefulset/postgres --timeout=180s
+          kubectl -n civicpulse rollout status deployment/redis --timeout=180s
+          kubectl -n civicpulse rollout status deployment/backend --timeout=240s
+          kubectl -n civicpulse rollout status deployment/frontend --timeout=180s
+      - name: Smoke-test through the Ingress
+        run: |
+          echo "127.0.0.1 civicpulse.local" | sudo tee -a /etc/hosts
+          for attempt in {1..36}; do
+            if curl --fail --silent http://civicpulse.local:8080/healthz >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 36 ]; then
+              kubectl -n civicpulse get all
+              exit 1
+            fi
+            sleep 5
+          done
+          python scripts/ci-smoke.py verify "$RUNNER_TEMP/civicpulse-smoke" \
+            --base-url http://civicpulse.local:8080 --expected-provider rules
+      - name: Print deployment and autoscaling state
+        if: always()
+        run: |
+          kubectl -n civicpulse get pods,services,ingress
+          kubectl -n civicpulse get hpa
+          kubectl -n civicpulse describe vpa backend-vpa || true
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          kubectl -n civicpulse describe pods
+          kubectl -n civicpulse logs deployment/backend --all-containers --tail=150 || true
+          kubectl -n civicpulse logs deployment/frontend --all-containers --tail=150 || true
