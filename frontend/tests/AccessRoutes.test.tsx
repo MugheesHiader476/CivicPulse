@@ -10,6 +10,22 @@ vi.mock("@clerk/react", () => ({
 }));
 
 describe("account routes", () => {
+  it("uses the fixed operator token only for an explicit local demo selection", async () => {
+    vi.stubGlobal("scrollTo", vi.fn());
+    window.history.replaceState({}, "", "/?demo_role=operator");
+    const { calls } = mockFetch((call) => {
+      expect(call.headers.get("Authorization")).toBe("Bearer demo-operator");
+      if (call.url.pathname === "/api/me") return jsonResponse({ role: "operator" });
+      if (call.url.pathname === "/api/meta/providers") return jsonResponse({ active_provider: "rules", recent: [] });
+      if (call.url.pathname === "/api/complaints") return jsonResponse({ items: [], total: 0, page: 1, page_size: 20 });
+      throw new Error(`Unexpected request: ${call.url.pathname}`);
+    });
+    render(<MemoryRouter initialEntries={["/"]}><App demoAuth /></MemoryRouter>);
+    expect(await screen.findByRole("heading", { name: "Complaint board" })).toBeInTheDocument();
+    expect(calls.some((call) => call.url.pathname === "/api/me")).toBe(true);
+    window.sessionStorage.removeItem("civicpulse-demo-role");
+  });
+
   it("shows only Report and My reports to a citizen", async () => {
     vi.stubGlobal("scrollTo", vi.fn());
     mockFetch(() => jsonResponse({ role: "citizen" }));

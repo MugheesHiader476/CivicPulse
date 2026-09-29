@@ -95,7 +95,9 @@ export function AppShell({ children, isOperator }: { children: ReactNode; isOper
             {navLinks("top-link")}
           </nav>
           <div className="header-tools">
-            {environment !== "mock-api" && <div className="user-control"><UserButton showName /></div>}
+            {runtimeConfig.authMode === "clerk" && environment !== "mock-api" && (
+              <div className="user-control"><UserButton showName /></div>
+            )}
             {isOperator && <ProviderChip />}
             <span className="env-badge" data-env={environment} title="Runtime environment, from /config.js">
               {environment}

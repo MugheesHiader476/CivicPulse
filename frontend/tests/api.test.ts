@@ -80,16 +80,18 @@ describe("validation mirrors the server schema", () => {
 
 describe("runtime config and presentation", () => {
   it("falls back to safe defaults for missing or hostile values", () => {
-    expect(readRuntimeConfig(undefined)).toEqual({ environment: "unknown", refreshSeconds: 15, clerkPublishableKey: "" });
+    expect(readRuntimeConfig(undefined)).toEqual({ environment: "unknown", refreshSeconds: 15, clerkPublishableKey: "", authMode: "clerk" });
     expect(readRuntimeConfig({ environment: "staging", refreshSeconds: "2" })).toEqual({
       environment: "staging",
       refreshSeconds: 5,
       clerkPublishableKey: "",
+      authMode: "clerk",
     });
     expect(readRuntimeConfig({ environment: "", refreshSeconds: "abc" })).toEqual({
       environment: "unknown",
       refreshSeconds: 15,
       clerkPublishableKey: "",
+      authMode: "clerk",
     });
   });
 

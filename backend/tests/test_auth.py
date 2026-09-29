@@ -1,5 +1,7 @@
 """Exercise real signature, expiry, origin, and header checks without Clerk network calls."""
 
+from dataclasses import replace
+
 
 def test_signed_clerk_session_can_use_all_app_routes(api, payload, citizen_post):
     client, _, _ = api
@@ -38,3 +40,28 @@ def test_pending_session_cannot_use_api(api, token_factory):
     client, _, _ = api
     client.headers["Authorization"] = f"Bearer {token_factory(status='pending')}"
     assert client.get("/api/stats").status_code == 401
+
+
+def test_demo_identities_work_only_when_demo_mode_is_explicit(api):
+    client, app, _ = api
+    clerk_settings = app.state.settings
+    app.state.settings = replace(
+        clerk_settings,
+        auth_mode="demo",
+        clerk_operator_user_ids=("demo_operator",),
+    )
+
+    client.headers["Authorization"] = "Bearer demo-citizen"
+    assert client.get("/api/me").json() == {"role": "citizen"}
+    assert client.get("/api/stats").status_code == 403
+
+    client.headers["Authorization"] = "Bearer demo-operator"
+    assert client.get("/api/me").json() == {"role": "operator"}
+    assert client.get("/api/stats").status_code == 200
+
+    client.headers["Authorization"] = "Bearer unknown-demo-user"
+    assert client.get("/api/me").status_code == 401
+
+    app.state.settings = clerk_settings
+    client.headers["Authorization"] = "Bearer demo-operator"
+    assert client.get("/api/me").status_code == 401

@@ -8,6 +8,7 @@ class Settings:
     database_url: str
     redis_url: str
     clerk_secret_key: str
+    auth_mode: str = "clerk"
     clerk_jwt_key: str = ""
     clerk_authorized_parties: tuple[str, ...] = ("http://127.0.0.1:8080",)
     clerk_operator_user_ids: tuple[str, ...] = ()
@@ -22,11 +23,14 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
+        auth_mode = os.getenv("AUTH_MODE", "clerk").strip().lower()
+        if auth_mode not in {"clerk", "demo"}:
+            raise ValueError("AUTH_MODE must be clerk or demo")
         clerk_secret_key = os.getenv("CLERK_SECRET_KEY", "")
-        if not clerk_secret_key:
+        if auth_mode == "clerk" and not clerk_secret_key:
             raise ValueError("CLERK_SECRET_KEY is required")
         parties = tuple(part.strip() for part in os.getenv("CLERK_AUTHORIZED_PARTIES", "").split(",") if part.strip())
-        if not parties or any(not part.startswith(("http://", "https://")) for part in parties):
+        if auth_mode == "clerk" and (not parties or any(not part.startswith(("http://", "https://")) for part in parties)):
             raise ValueError("CLERK_AUTHORIZED_PARTIES must contain trusted http(s) origins")
         provider = os.getenv("TRIAGE_PROVIDER", "rules")
         if provider not in {"rules", "simulated", "llm", "ollama"}:
@@ -49,6 +53,7 @@ class Settings:
             database_url=os.environ["DATABASE_URL"],
             redis_url=os.environ["REDIS_URL"],
             clerk_secret_key=clerk_secret_key,
+            auth_mode=auth_mode,
             clerk_jwt_key=os.getenv("CLERK_JWT_KEY", ""),
             clerk_authorized_parties=parties,
             clerk_operator_user_ids=tuple(

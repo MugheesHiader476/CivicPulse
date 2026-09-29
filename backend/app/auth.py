@@ -1,4 +1,4 @@
-"""Clerk session authentication for browser-originated API requests."""
+"""Clerk authentication plus an explicitly enabled, local-only demonstration boundary."""
 
 from typing import Annotated
 
@@ -8,12 +8,17 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 bearer = HTTPBearer(auto_error=False)
 
+DEMO_USERS = {
+    "demo-citizen": "demo_citizen",
+    "demo-operator": "demo_operator",
+}
+
 
 def require_user(
     request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
 ) -> str:
-    """Accept only a verified Clerk session JWT, never an unsigned claim or cookie alone."""
+    """Accept a verified Clerk JWT, or one fixed identity only when demo mode is explicit."""
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=401,
@@ -22,6 +27,16 @@ def require_user(
         )
 
     settings = request.app.state.settings
+    if settings.auth_mode == "demo":
+        user_id = DEMO_USERS.get(credentials.credentials)
+        if user_id is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid demo session",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user_id
+
     try:
         state = authenticate_request(
             request,

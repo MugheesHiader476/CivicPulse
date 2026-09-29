@@ -1,0 +1,143 @@
+name: civicpulse
+
+x-backend-environment: &backend-environment
+  DATABASE_URL: postgresql+psycopg://civicpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/civicpulse
+  REDIS_URL: redis://redis:6379/0
+  AUTH_MODE: clerk
+  CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?set CLERK_SECRET_KEY}
+  CLERK_JWT_KEY: ${CLERK_JWT_KEY:-}
+  CLERK_AUTHORIZED_PARTIES: ${CLERK_AUTHORIZED_PARTIES:?set CLERK_AUTHORIZED_PARTIES}
+  CLERK_OPERATOR_USER_IDS: ${CLERK_OPERATOR_USER_IDS:-}
+  TRIAGE_PROVIDER: ${TRIAGE_PROVIDER:-rules}
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
+  GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
+  OLLAMA_URL: http://ollama:11434
+  OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b-instruct-q4_K_M}
+  TRUSTED_PROXY_CIDRS: 172.29.10.0/24
+
+services:
+  postgres:
+    image: postgres:16.9-alpine3.22
+    environment:
+      POSTGRES_DB: civicpulse
+      POSTGRES_USER: civicpulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civicpulse -d civicpulse"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: {cpus: "0.75", memory: 768M}
+
+  redis:
+    image: redis:7.4.5-alpine3.21
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: {cpus: "0.25", memory: 256M}
+
+  migrate:
+    image: ghcr.io/${GHCR_OWNER:?set GHCR_OWNER}/civicpulse-backend:${IMAGE_TAG:?set IMAGE_TAG}
+    command: ["alembic", "upgrade", "head"]
+    environment: *backend-environment
+    networks: [internal]
+    depends_on:
+      postgres: {condition: service_healthy}
+    deploy:
+      resources:
+        limits: {cpus: "0.25", memory: 256M}
+
+  backend:
+    image: ghcr.io/${GHCR_OWNER:?set GHCR_OWNER}/civicpulse-backend:${IMAGE_TAG:?set IMAGE_TAG}
+    environment: *backend-environment
+    networks: [edge, internal, ai]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: {cpus: "1.0", memory: 768M}
+
+  ollama:
+    profiles: [local-ai]
+    image: ollama/ollama:0.34.1
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b-instruct-q4_K_M}
+      OLLAMA_KEEP_ALIVE: 10m
+      OLLAMA_NUM_PARALLEL: 1
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      ai: {}
+      model-egress:
+        gw_priority: 1
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: {cpus: "2.0", memory: 3G}
+
+  frontend:
+    image: ghcr.io/${GHCR_OWNER:?set GHCR_OWNER}/civicpulse-frontend:${IMAGE_TAG:?set IMAGE_TAG}
+    environment:
+      API_UPSTREAM: http://backend:8000
+      APP_ENV: production
+      AUTH_MODE: clerk
+      DASHBOARD_REFRESH_SECONDS: ${DASHBOARD_REFRESH_SECONDS:-15}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?set CLERK_PUBLISHABLE_KEY}
+      CLERK_FRONTEND_API_ORIGIN: ${CLERK_FRONTEND_API_ORIGIN:?set CLERK_FRONTEND_API_ORIGIN}
+    networks: [edge]
+    ports: ["${CIVICPULSE_PORT:-8080}:8080"]
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: {cpus: "0.25", memory: 128M}
+
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: 172.29.10.0/24
+  internal:
+    internal: true
+  ai:
+    internal: true
+  model-egress: {}
+
+volumes:
+  pgdata: {}
+  redisdata: {}
+  ollama_models: {}

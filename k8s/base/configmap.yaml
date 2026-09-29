@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: civicpulse-config
+data:
+  APP_ENV: production
+  AUTH_MODE: clerk
+  DASHBOARD_REFRESH_SECONDS: "15"
+  CLERK_AUTHORIZED_PARTIES: http://civicpulse.local,http://civicpulse.local:8080,http://127.0.0.1:8080 # NOSONAR - local origins, not outbound secrets
+  CLERK_FRONTEND_API_ORIGIN: https://replace-me.clerk.accounts.dev
+  CLERK_OPERATOR_USER_IDS: ci_operator
+  TRIAGE_PROVIDER: rules
+  GROQ_MODEL: llama-3.1-8b-instant
+  OLLAMA_URL: http://ollama:11434
+  OLLAMA_MODEL: llama3.2:1b-instruct-q4_K_M
+  RATE_LIMIT_PER_MINUTE: "6"
+  TRUSTED_PROXY_CIDRS: 10.0.0.0/8

@@ -6,6 +6,7 @@ import { AuthSetupRequired } from "./pages/AuthPage";
 
 export function ClerkRoot() {
   const navigate = useNavigate();
+  if (runtimeConfig.authMode === "demo") return <App demoAuth />;
   if (!runtimeConfig.clerkPublishableKey) return <AuthSetupRequired />;
   return (
     <ClerkProvider

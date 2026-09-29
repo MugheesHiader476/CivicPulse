@@ -14,6 +14,11 @@ services:
       timeout: 3s
       retries: 12
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 768M
 
   redis:
     image: redis:7.4.5-alpine3.21
@@ -27,6 +32,11 @@ services:
       timeout: 3s
       retries: 12
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
 
   migrate:
     image: civicpulse-backend:local
@@ -36,6 +46,11 @@ services:
     networks: [internal]
     depends_on:
       postgres: {condition: service_healthy}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
 
   backend:
     image: civicpulse-backend:local
@@ -43,16 +58,20 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://civicpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/civicpulse
       REDIS_URL: redis://redis:6379/0
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?Run clerk env pull in frontend}
+      AUTH_MODE: ${AUTH_MODE:-demo}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
       CLERK_JWT_KEY: ${CLERK_JWT_KEY:-}
       CLERK_AUTHORIZED_PARTIES: ${CLERK_AUTHORIZED_PARTIES:-http://127.0.0.1:8080,http://localhost:8080,http://localhost:5173,http://127.0.0.1:5173}
-      CLERK_OPERATOR_USER_IDS: ${CLERK_OPERATOR_USER_IDS:-}
+      CLERK_OPERATOR_USER_IDS: ${CLERK_OPERATOR_USER_IDS:-demo_operator}
       TRIAGE_PROVIDER: ${TRIAGE_PROVIDER:-rules}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b-instruct-q4_K_M}
       TRUSTED_PROXY_CIDRS: 172.28.10.0/24
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--no-access-log"]
+    volumes:
+      - ./backend/app:/app/app:ro
     networks: [edge, internal, ai]
     ports: ["127.0.0.1:8000:8000"]
     depends_on:
@@ -64,6 +83,11 @@ services:
       timeout: 3s
       retries: 12
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
 
   ollama:
     profiles: [local-ai]
@@ -96,8 +120,9 @@ services:
     environment:
       API_UPSTREAM: http://backend:8000
       APP_ENV: development
-      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?Run clerk env pull in frontend}
-      CLERK_FRONTEND_API_ORIGIN: ${CLERK_FRONTEND_API_ORIGIN:?Set exact Clerk frontend API origin}
+      AUTH_MODE: ${AUTH_MODE:-demo}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:-}
+      CLERK_FRONTEND_API_ORIGIN: ${CLERK_FRONTEND_API_ORIGIN:-https://clerk.invalid}
     networks: [edge]
     ports: ["127.0.0.1:8080:8080"]
     depends_on:
@@ -108,6 +133,11 @@ services:
       timeout: 3s
       retries: 12
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
 
 networks:
   edge:

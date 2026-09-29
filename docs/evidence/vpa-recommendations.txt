@@ -1,0 +1,24 @@
+CivicPulse Kubernetes VPA verification
+Captured locally on 2026-09-28 after sustained HTTP load.
+
+Command:
+kubectl -n civicpulse get vpa backend-vpa -o yaml
+
+updateMode: Off
+containerName: backend
+recommendation:
+  lowerBound:
+    cpu: 50m
+    memory: 250Mi
+  target:
+    cpu: 977m
+    memory: 250Mi
+  uncappedTarget:
+    cpu: 977m
+    memory: 250Mi
+  upperBound:
+    cpu: "2"
+    memory: 2Gi
+
+Recommendation-only mode is intentional: HPA controls replica count while VPA
+reports right-sizing guidance without restarting the backend or competing for CPU.
