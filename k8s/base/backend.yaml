@@ -102,10 +102,12 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "sleep 5"]
+          # Initial guess was cpu 200m / memory 256Mi. Updated to the VPA target captured under load
+          # (docs/evidence/vpa-recommendations.txt); VPA stays in Off mode so HPA owns scaling.
           resources:
             requests:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 977m
+              memory: 250Mi
             limits:
               cpu: "1"
               memory: 768Mi

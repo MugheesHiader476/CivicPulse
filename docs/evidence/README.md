@@ -24,12 +24,24 @@ database credentials, or private signing keys may be included.
 | `docker-images.png` | Backend and frontend images use non-root users, include health checks, and have measured sizes of approximately 322 MB and 94.2 MB. |
 | `k8s-resources.png` | The kind cluster runs replicated backend/frontend workloads, PostgreSQL, Redis, services, Ingress, bound PVCs, and an HPA. |
 | `hpa-load.png` | The backend HPA scales under a real k6 load test. |
-| `scaling-chart.png` | Replica changes are plotted from the captured HPA watch timestamps rather than invented data. |
+| `scaling-chart.png` | Run 2 (after the VPA request update): backend replicas plotted against offered load (k6 virtual users and throughput) and CPU, from `hpa-timeline-run2.csv`. |
+| `scaling-chart-run1.png` | Run 1 (original 200m request): replicas plotted against CPU from `hpa-timeline.csv`. |
 | `ci-green.png` | GitHub Actions CI succeeds for commit `471f524` on `dev`, including tests, lint/type checks, manifests, builds, integration, and image scans. |
 | `blocked-merge.png` | A deliberately failing backend check and missing approval prevent PR #19 from merging. |
 | `green-pipeline.png` | The same release PR passes all nine required pull-request jobs after the repair. |
 | `branch-protection.png` | The active ruleset targets `main`, requires PR/check gates, and blocks deletion/force-push. |
-| `hpa-watch.txt` | Raw timestamped HPA observations used for autoscaling analysis. |
+| `hpa-watch.txt` | Run 1 timestamped HPA observations used for autoscaling analysis. |
+| `hpa-watch-run2-raw.txt` | Run 2 unedited `kubectl get hpa backend -w` output. |
+| `hpa-samples-run2.txt` | Run 2 `kubectl get hpa` sampled every 5 seconds with timestamps, used for lag analysis. |
+| `hpa-timeline-run2.csv` | Run 2 k6 offered load (virtual users, requests/s) joined with HPA CPU and replicas, per 5 seconds. |
+| `k6-summary-run2.txt` | Run 2 k6 end-of-test summary. |
+| `vpa-recommendations-run2.txt` | `kubectl describe vpa backend-vpa` after run 2. |
+| `triage-cache-hit-rate.txt` | Measured content-hash triage cache hit rate: workload, per-request results, and raw counters. |
+| `image-and-context-sizes.txt` | Build-context sizes with and without `.dockerignore`, build-stage and final image sizes. |
+| `cd-green.png` | The final `main` CD run completes test, build-push, and deploy-k8s. |
+| `ghcr-images.png` | Backend and frontend images published to GHCR. |
+| `release-overview.png` | GitHub release `v1.0.0` with generated notes. |
+| `release-assets.png` | Release assets including both SPDX SBOMs. |
 | `hpa-timeline.csv` | Normalized autoscaling observations used to generate the scaling chart. |
 | `k6-summary.txt` | Load-test totals, failure rate, and response-time measurements. |
 | `vpa-recommendations.txt` | A real Vertical Pod Autoscaler recommendation for the backend workload. |
@@ -38,9 +50,6 @@ database credentials, or private signing keys may be included.
 
 The following evidence must come from later real actions and must not be fabricated:
 
-- successful CD deployment for the final `main` SHA;
-- published backend/frontend GHCR packages;
-- generated GitHub Release with release notes and attached SBOMs;
 - final PDF report and unlisted demonstration-video URL.
 
 See `../EVIDENCE-GUIDE.md` for the capture procedure and expected filenames.

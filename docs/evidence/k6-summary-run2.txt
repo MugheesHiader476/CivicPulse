@@ -1,0 +1,42 @@
+CivicPulse k6 load-test summary - run 2 (after VPA request update to cpu 977m / memory 250Mi)
+Command: BASE_URL=http://127.0.0.1:8080 HOST_HEADER=civicpulse.local TARGET_PATH=/api/me AUTH_TOKEN=demo-operator k6 run load/k6-script.js
+Path: host -> kind Ingress (ingress-nginx) -> backend Service, so load is spread across every replica
+k6_start 2026-09-29T18:11:46+0500
+k6_end 2026-09-29T18:16:47+0500 exit=0
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✓ 'p(95)<1000' p(95)=40.78ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 248691  828.810645/s
+    checks_succeeded...: 100.00% 248691 out of 248691
+    checks_failed......: 0.00%   0 out of 248691
+
+    ✓ response is successful
+
+    HTTP
+    http_req_duration..............: avg=15.23ms  min=1.21ms  med=9.78ms   max=456.79ms p(90)=29.15ms  p(95)=40.78ms 
+      { expected_response:true }...: avg=15.23ms  min=1.21ms  med=9.78ms   max=456.79ms p(90)=29.15ms  p(95)=40.78ms 
+    http_req_failed................: 0.00%  0 out of 248691
+    http_reqs......................: 248691 828.810645/s
+
+    EXECUTION
+    iteration_duration.............: avg=115.72ms min=101.5ms med=110.24ms max=557.5ms  p(90)=129.75ms p(95)=141.45ms
+    iterations.....................: 248691 828.810645/s
+    vus............................: 1      min=1           max=199
+    vus_max........................: 200    min=200         max=200
+
+    NETWORK
+    data_received..................: 50 MB  165 kB/s
+    data_sent......................: 29 MB  95 kB/s
+
+
+
+

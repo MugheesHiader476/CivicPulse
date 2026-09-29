@@ -1,0 +1,27 @@
+NAME      REFERENCE            TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+backend   Deployment/backend   cpu: 0%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 0%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 0%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 0%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 11%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 28%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 40%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 51%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 66%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 84%/60%   2         10        2          22h
+backend   Deployment/backend   cpu: 89%/60%   2         10        3          22h
+backend   Deployment/backend   cpu: 89%/60%   2         10        3          22h
+backend   Deployment/backend   cpu: 91%/60%   2         10        5          22h
+backend   Deployment/backend   cpu: 78%/60%   2         10        5          22h
+backend   Deployment/backend   cpu: 79%/60%   2         10        7          22h
+backend   Deployment/backend   cpu: 73%/60%   2         10        7          22h
+backend   Deployment/backend   cpu: 73%/60%   2         10        9          22h
+backend   Deployment/backend   cpu: 69%/60%   2         10        9          22h
+backend   Deployment/backend   cpu: 68%/60%   2         10        9          22h
+backend   Deployment/backend   cpu: 71%/60%   2         10        10         22h
+backend   Deployment/backend   cpu: 70%/60%   2         10        10         22h
+backend   Deployment/backend   cpu: 68%/60%   2         10        10         22h
+backend   Deployment/backend   cpu: 45%/60%   2         10        10         22h
+backend   Deployment/backend   cpu: 11%/60%   2         10        10         22h
+backend   Deployment/backend   cpu: 1%/60%    2         10        10         22h
+backend   Deployment/backend   cpu: 0%/60%    2         10        10         22h

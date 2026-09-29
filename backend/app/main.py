@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import sys
 import time
 from contextlib import asynccontextmanager
 from uuid import uuid4
@@ -44,7 +45,8 @@ def configure_logging() -> None:
     logger = logging.getLogger("civicpulse")
     logger.setLevel(logging.INFO)
     if not logger.handlers:
-        handler = logging.StreamHandler()
+        # Containers ship stdout to the log collector; never log to stderr or a file.
+        handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(JsonFormatter())
         logger.addHandler(handler)
     logger.propagate = False

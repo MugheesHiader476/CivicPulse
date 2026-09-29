@@ -44,10 +44,13 @@ location. The 24-hour entry stores only the validated result and provider name. 
 scope prevents an operator switch from reusing a result produced by a different classifier.
 Fallbacks are not cached, so a temporary outage does not poison the cache for a day.
 
-To measure the required hit rate, submit a recorded mix containing both unique and duplicate
-complaints, then calculate `hit / (hit + miss)` from `civicpulse_triage_cache_total` before and
-after the run. Record the workload, raw counter values, and result in `docs/evidence/`; do not
-claim a rate from seeded or invented data.
+**Measured hit rate: 36.8%.** On 29 September, 19 complaint submissions containing 12 distinct
+complaints (one reported five times, one three times, one twice, nine once) were sent through the
+kind Ingress while `civicpulse_triage_cache_total` was read from every backend pod before and after.
+The counters moved by 7 hits and 12 misses: each repeat was served from Redis and each first report
+was classified. Seven of nineteen submissions therefore cost no inference. The workload, method, and
+raw output are in `docs/evidence/triage-cache-hit-rate.txt`. The key is exact, so re-worded
+duplicates still miss; normalising wording further would trade accuracy for a higher rate.
 
 ## Data governance
 

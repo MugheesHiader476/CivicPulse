@@ -7,7 +7,9 @@ def test_seed_is_idempotent_and_spans_categories(api):
     sessions = app.state.service.repository.sessions
     assert seed(sessions) == 30
     assert seed(sessions) == 0
-    assert client.get("/api/complaints").json()["total"] == 30
+    listed = client.get("/api/complaints", params={"page_size": 100}).json()
+    assert listed["total"] == 30
+    assert len({item["text"] for item in listed["items"]}) == 30
     stats = client.get("/api/stats").json()
     assert set(stats["by_category"]) == {"water", "electricity", "sanitation", "roads", "streetlights", "other"}
 
