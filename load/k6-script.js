@@ -4,6 +4,8 @@ import { check, sleep } from "k6";
 const baseUrl = (__ENV.BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const targetPath = __ENV.TARGET_PATH || "/health";
 const token = __ENV.AUTH_TOKEN || "";
+// Lets the test reach a host-routed Ingress (civicpulse.local) without editing the hosts file.
+const hostHeader = __ENV.HOST_HEADER || "";
 
 export const options = {
   stages: [
@@ -19,7 +21,9 @@ export const options = {
 };
 
 export default function () {
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (hostHeader) headers.Host = hostHeader;
   const response = http.get(`${baseUrl}${targetPath}`, { headers });
   check(response, {
     "response is successful": (result) => result.status >= 200 && result.status < 300,
