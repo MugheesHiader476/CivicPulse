@@ -45,10 +45,31 @@ or modifying it in the viva.
 - Refused to fabricate HPA/VPA measurements, screenshots, merge evidence, failure history, or a
   partner's Git authorship. Those items must come from real runs and real contributors.
 
+## Anthropic Claude Code
+
+### What it assisted Faseeh with
+
+- Audited the finished repository against the assignment PDF at Faseeh's request and listed the
+  remaining rubric gaps.
+- Under Faseeh's direction, assisted with the final gap fixes: JSON logs on stdout, a seed of 30
+  distinct complaints, backend requests updated from the VPA recommendation, the k6 Host-header
+  option, and documentation updates in this repository.
+- Ran the commands Faseeh approved for the measurements (HPA re-run, VPA read-out, triage-cache
+  hit rate, build-context and image-stage sizes) and reported the raw output for review.
+
+### What the team changed or verified
+
+- Faseeh decided the scope of every change and is responsible for reviewing each diff.
+  Commits carry the students' real names, as the course instructor required.
+- Measurements were taken from real runs on the team's kind cluster and Docker Desktop; raw output
+  is committed under `docs/evidence/` next to each derived number.
+- Backend (pytest, Ruff, mypy) and frontend (Vitest, ESLint, TypeScript) checks were re-run after
+  the changes.
+
 ## Human review still required before submission
 
 - Both partners must read every changed file and rehearse the related viva explanation.
-- Mughees must genuinely review and approve the final protected-main PR after its last push.
+- Mughees must review and approve every protected-main PR after its last push.
 - The team must record the two-person demo and add its real URL to the submitted report.
 - Add any other AI tools or conversations used for earlier frontend/backend work. Do not imply that
   this file covers tools that were not disclosed to the reviewer who drafted it.

@@ -10,7 +10,7 @@ rows until a person reads them. Citizens also cannot be expected to choose the c
 or urgency. CivicPulse extracts the category, priority, and short summary from free text while
 keeping that classifier replaceable and ensuring an AI outage never prevents complaint intake.
 
-Municipal complaint intake and operations dashboard built from the attached SRS. The web UI is
+CivicPulse is a municipal complaint intake and operations dashboard. The web UI is
 React 18, TypeScript and Vite; FastAPI supplies triage and the API; PostgreSQL stores complaints;
 Redis handles caching and submission limits. Nginx serves the production frontend and proxies
 same-origin `/api` requests to FastAPI.
@@ -44,8 +44,11 @@ PowerShell:
 ```powershell
 git clone https://github.com/MugheesHiader476/CivicPulse.git
 cd CivicPulse
-./scripts/dev-up.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\dev-up.ps1
 ```
+
+`-ExecutionPolicy Bypass` applies only to that one process, so it works on a fresh Windows machine
+whose default policy blocks local scripts; it does not change any system setting.
 
 On Linux or macOS, use the Bash launcher:
 
@@ -79,7 +82,15 @@ Run `docker compose down` to stop the stack without erasing data. Run
 `docker compose exec backend python -m app.seed` to seed again; it adds zero duplicate rows.
 
 See [backend README](backend/README.md) for access policy, API behavior and tests, and
-[frontend README](frontend/README.md) for Vite development. The SRS is in `SRS/`.
+[frontend README](frontend/README.md) for Vite development.
+
+## Screenshots
+
+| Citizen submission with AI triage result | Operator dashboard |
+|---|---|
+| ![Citizen submission](docs/evidence/citizen-submit.png) | ![Operator dashboard](docs/evidence/operator-dashboard.png) |
+| **Stats with the X-Cache state** | **HPA scaling under k6 load** |
+| ![Stats cache hit](docs/evidence/redis-cache-hit.png) | ![Replicas against offered load](docs/evidence/scaling-chart.png) |
 
 ## API contract
 
@@ -101,6 +112,18 @@ in `CLERK_OPERATOR_USER_IDS`; citizens can access only their own reports.
 | `GET` | `/health` | public | Liveness only; never touches dependencies |
 | `GET` | `/ready` | public | PostgreSQL and Redis readiness |
 | `GET` | `/metrics` | public | Prometheus request and triage metrics |
+
+In local demo mode (`AUTH_MODE=demo`, the default for `scripts/dev-up`), the two fixed evaluation
+identities are sent as bearer tokens, so the contract can be exercised directly with curl:
+
+```bash
+curl -i -X POST http://127.0.0.1:8080/api/complaints -H "Authorization: Bearer demo-citizen" -H "Content-Type: application/json" -d '{"text":"Burst water main flooding Street 12 since fajr","location":"Street 12, Lahore"}'
+curl -i http://127.0.0.1:8080/api/stats -H "Authorization: Bearer demo-operator"
+curl -i http://127.0.0.1:8080/api/meta/providers -H "Authorization: Bearer demo-operator"
+```
+
+A request without a token returns `401`; a citizen token on an operator route returns `403`.
+These demo tokens are rejected whenever `AUTH_MODE=clerk`.
 
 ## AI provider choice
 

@@ -1,0 +1,40 @@
+CivicPulse image and build-context measurements
+Captured 2026-09-29 on Docker Desktop 29.8.0 (Windows 11), BuildKit.
+
+Build-context size (what the builder receives)
+Method: each context was copied into a throwaway busybox image with "COPY . /ctx" and measured with
+"du -sk" and "find | wc -l". "Without" used an empty Dockerfile-specific ignore file so nothing was
+excluded; "with" used the committed .dockerignore.
+
+  backend/   without .dockerignore: 224,952 KiB (~220 MB), 8,221 files  (.venv, caches, tests)
+  backend/   with    .dockerignore:     436 KiB (~0.4 MB),    61 files
+  frontend/  without .dockerignore: 263,276 KiB (~257 MB), 17,734 files (node_modules, tests)
+  frontend/  with    .dockerignore:     616 KiB (~0.6 MB),    62 files
+
+The first backend measurement with the old .dockerignore was 26,960 KiB / 70 files: it still sent a
+26 MB .mypy_cache. .mypy_cache, .ruff_cache and .coverage were added to backend/.dockerignore and the
+context was re-measured at 436 KiB.
+
+Image sizes by stage (docker image ls)
+  backend  builder stage (python:3.12.14-slim-bookworm + pip install):  335 MB
+  backend  final image   (python:3.12.14-slim-bookworm + /install + app): 323 MB
+  frontend build stage   (node:22.22.2-alpine3.23 + node_modules + dist): 636 MB
+  frontend final image   (nginx:1.30.5-alpine3.24 + dist):                 94.2 MB
+
+Why the frontend final image is above ~60 MB
+The multi-stage split works: no Node, node_modules or source reach the final image (636 MB -> 94.2 MB).
+The application adds under 1 MB; the rest is the pinned nginx:1.30.5-alpine3.24 base, which in the
+1.30 line bundles the njs and ACME modules (~52 MB layer). Frontend final-image layers:
+0B	CMD ["nginx" "-g" "daemon off;"]
+0B	HEALTHCHECK &{["CMD-SHELL" "wget -q -O /dev/…
+0B	EXPOSE map[8080/tcp:{}]
+0B	USER nginx
+676kB	COPY --chown=nginx:nginx /app/dist /usr/shar…
+20.5kB	COPY --chown=nginx:nginx nginx/default.conf.…
+20.5kB	COPY --chown=nginx:nginx nginx/security-head…
+16.4kB	COPY --chown=nginx:nginx nginx/nginx.conf /e…
+332kB	RUN /bin/sh -c apk upgrade --no-cache  && rm…
+51.9MB	RUN (inherited from nginx:1.30.5-alpine3.24: nginx, njs and ACME modules)
+5.62MB	RUN (inherited: nginx user and packages) + alpine3.24 root filesystem
+A smaller alternative is the nginx *-alpine-slim variant; it was not adopted because the current base
+is the one scanned clean by Trivy in CI and relies on the official template/envsubst entrypoint.

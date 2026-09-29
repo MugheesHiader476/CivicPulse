@@ -1,0 +1,48 @@
+CivicPulse triage content-hash cache hit rate
+Captured 2026-09-29 on the kind cluster (dev overlay, 2 backend replicas, shared Redis),
+provider in use: rules (TRIAGE_PROVIDER=rules; no Groq key was configured on this machine).
+
+Workload: 12 distinct complaints submitted as a citizen through the Ingress (POST /api/complaints),
+19 submissions in total. Duplicates model neighbours re-sending the identical message:
+  1 complaint reported 5 times (burst water main), 1 reported 3 times (transformer fire),
+  1 reported twice (uncollected garbage), 9 reported once. Duplicates were interleaved, not sent
+  back to back. The per-IP rate limiter (6/minute) returned 429 with Retry-After three times; the
+  script waited for Retry-After and resent, as a client should.
+
+Method: civicpulse_triage_cache_total{result="hit"|"miss"} was read from /metrics inside every
+backend pod (kubectl exec) before and after the run and summed across pods. Counters are per
+process; the key and cached result are shared through Redis, so a duplicate hits whichever pod
+receives it.
+
+Result: hits 7, misses 12, hit rate = 7 / (7 + 12) = 36.8%.
+Every repeat was a hit and every first report a miss, which is the expected behaviour for an exact
+content-hash key (provider + model + normalised text + normalised location). Rephrased duplicates
+("water pipe burst" versus "burst water main") would miss; the rate reported here applies to exact
+re-submissions only.
+
+Raw script output:
+pods=['backend-5648c94949-28j99', 'backend-5648c94949-lh5x7'] before={'hit': 0.0, 'miss': 0.0}
+ 1 rules    water           4 ms  Gol Chakkar, Sabzazar
+ 2 rules    water           0 ms  Gol Chakkar, Sabzazar
+ 3 rules    water           0 ms  Gol Chakkar, Sabzazar
+ 4 rules    electricity     1 ms  Street 3, Nishtar Colony
+ 5 rules    sanitation      0 ms  Green Belt, Township
+ 6 rules    roads           2 ms  Multan Road, Lahore
+  429 rate-limited, Retry-After=14s
+ 7 rules    water           0 ms  Street 11, Bilal Ganj
+ 8 rules    roads           0 ms  Wahdat Road, Lahore
+ 9 rules    water           0 ms  Block K, Sabzazar
+10 rules    other           0 ms  Ravi Bridge Road, Lahore
+11 rules    water           0 ms  Gol Chakkar, Sabzazar
+12 rules    water           0 ms  Gol Chakkar, Sabzazar
+  429 rate-limited, Retry-After=59s
+13 rules    electricity     0 ms  Street 3, Nishtar Colony
+14 rules    electricity     0 ms  Street 3, Nishtar Colony
+15 rules    sanitation      0 ms  Green Belt, Township
+16 rules    streetlights    0 ms  Mosque Corner, Shadbagh
+17 rules    electricity     0 ms  Chung, Lahore
+18 rules    other           0 ms  Iqbal Park, Samanabad
+  429 rate-limited, Retry-After=59s
+19 rules    sanitation      0 ms  Badami Bagh, Lahore
+pods=['backend-5648c94949-28j99', 'backend-5648c94949-lh5x7'] after={'hit': 7.0, 'miss': 12.0}
+submissions=19 unique=12 hits=7 misses=12 hit_rate=36.8%

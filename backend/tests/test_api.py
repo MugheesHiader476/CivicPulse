@@ -140,3 +140,19 @@ def test_unhandled_database_error_has_safe_response(api, payload):
     response = client.get("/api/complaints")
     assert response.status_code == 503
     assert "password" not in response.text
+
+
+def test_application_logs_are_json_on_stdout():
+    import logging
+    import sys
+
+    from app.main import configure_logging
+
+    logger = logging.getLogger("civicpulse")
+    saved = logger.handlers[:]
+    logger.handlers.clear()
+    try:
+        configure_logging()
+        assert logger.handlers[0].stream is sys.stdout
+    finally:
+        logger.handlers[:] = saved

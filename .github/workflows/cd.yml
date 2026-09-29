@@ -178,9 +178,18 @@ jobs:
           kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.0/components.yaml
           kubectl patch deployment metrics-server -n kube-system --type=json \
             -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
-          git clone --depth 1 --branch vertical-pod-autoscaler-1.7.1 \
-            https://github.com/kubernetes/autoscaler.git "$RUNNER_TEMP/autoscaler"
-          "$RUNNER_TEMP/autoscaler/vertical-pod-autoscaler/hack/vpa-up.sh"
+          mkdir -p "$RUNNER_TEMP/autoscaler"
+          git -C "$RUNNER_TEMP/autoscaler" init
+          git -C "$RUNNER_TEMP/autoscaler" remote add origin \
+            https://github.com/kubernetes/autoscaler.git
+          git -C "$RUNNER_TEMP/autoscaler" fetch --depth 1 origin \
+            refs/tags/vertical-pod-autoscaler-1.7.1:refs/tags/vertical-pod-autoscaler-1.7.1
+          git -C "$RUNNER_TEMP/autoscaler" checkout --detach \
+            refs/tags/vertical-pod-autoscaler-1.7.1
+          (
+            cd "$RUNNER_TEMP/autoscaler"
+            ./vertical-pod-autoscaler/hack/vpa-up.sh
+          )
           kubectl wait -n ingress-nginx --for=condition=Ready pod \
             -l app.kubernetes.io/component=controller --timeout=180s
           kubectl rollout status -n kube-system deployment/metrics-server --timeout=180s

@@ -1,8 +1,16 @@
+# Keep the build context to what the Dockerfile copies: no VCS data, virtualenvs, caches,
+# secrets, or tests and their fixtures.
 .git
 .venv
 venv
+node_modules
 __pycache__
 *.pyc
 .env
+.env.*
 tests
 .pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
