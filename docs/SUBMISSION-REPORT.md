@@ -1,10 +1,16 @@
 # CivicPulse - Software Construction and Design assignment report
 
-**Team:** Faseeh Ahmed and Mughees Hiader
+**Assignment:** Software Construction and Design - Assignment 1
 
-**Repository:** <https://github.com/MugheesHiader476/CivicPulse>
+**Students:** Faseeh Ahmed (24I-3009) and Mughees Haider (24I-3181)
 
-**Release pull request:** <https://github.com/MugheesHiader476/CivicPulse/pull/19>
+**Submitted to:** Mr. Peer Sami Ullah
+
+**Submission date:** September 29, 2026
+
+**Repository:** [CivicPulse on GitHub](https://github.com/MugheesHiader476/CivicPulse)
+
+**Release pull request:** [PR #19](https://github.com/MugheesHiader476/CivicPulse/pull/19)
 **Final main SHA / successful CD run / video:** added to the submitted PDF after the protected merge
 
 ## 1. Executive summary
@@ -128,20 +134,19 @@ recommended a 977m CPU target and 250Mi memory target during the measured load.
 
 ## 7. Collaboration and Git evidence
 
-Before this report update, `git rev-list --count --all` returned 65. The report commit brings the
-source-branch history to 66 commits: 41 by Faseeh and 25 by Mughees (approximately 62.1% / 37.9%),
-so both partners remain above the required 35% share. `.mailmap` combines Faseeh's two verified
-email identities without rewriting history.
+Before this report design update, the source-branch history contained 66 commits: 41 by Faseeh and
+25 by Mughees (approximately 62.1% / 37.9%), so both partners remained above the required 35%
+share. The report-design commit brings the history to 67 commits: 42 by Faseeh and 25 by Mughees
+(approximately 62.7% / 37.3%). `.mailmap` combines Faseeh's two verified email identities without
+rewriting history.
 
 At least five issue-linked PRs contain substantive partner review:
 
-| Issue | Pull request | Author | Partner review | Result |
-|---|---|---|---|---|
-| [#10](https://github.com/MugheesHiader476/CivicPulse/issues/10) | [#11 cleanup](https://github.com/MugheesHiader476/CivicPulse/pull/11) | Mughees | Faseeh approved focused removal | Merged |
-| [#12](https://github.com/MugheesHiader476/CivicPulse/issues/12) | [#13 boundary regression](https://github.com/MugheesHiader476/CivicPulse/pull/13) | Faseeh | Mughees reviewed matcher semantics/tests | Merged |
-| [#14](https://github.com/MugheesHiader476/CivicPulse/issues/14) | [#15 competing fix](https://github.com/MugheesHiader476/CivicPulse/pull/15) | Mughees | Faseeh reviewed conflict resolution/tests | Merged |
-| [#16](https://github.com/MugheesHiader476/CivicPulse/issues/16) | [#17 repository cleanup](https://github.com/MugheesHiader476/CivicPulse/pull/17) | Faseeh | Mughees approved scope and author mapping | Merged |
-| [#18](https://github.com/MugheesHiader476/CivicPulse/issues/18) | [#19 protected release](https://github.com/MugheesHiader476/CivicPulse/pull/19) | Faseeh | Mughees reviews the final green SHA | Awaiting approval |
+- Issue [#10](https://github.com/MugheesHiader476/CivicPulse/issues/10), PR [#11 cleanup](https://github.com/MugheesHiader476/CivicPulse/pull/11): Mughees authored it; Faseeh approved the focused removal; merged.
+- Issue [#12](https://github.com/MugheesHiader476/CivicPulse/issues/12), PR [#13 boundary regression](https://github.com/MugheesHiader476/CivicPulse/pull/13): Faseeh authored it; Mughees reviewed matcher semantics and tests; merged.
+- Issue [#14](https://github.com/MugheesHiader476/CivicPulse/issues/14), PR [#15 competing fix](https://github.com/MugheesHiader476/CivicPulse/pull/15): Mughees authored it; Faseeh reviewed conflict resolution and tests; merged.
+- Issue [#16](https://github.com/MugheesHiader476/CivicPulse/issues/16), PR [#17 repository cleanup](https://github.com/MugheesHiader476/CivicPulse/pull/17): Faseeh authored it; Mughees approved scope and author mapping; merged.
+- Issue [#18](https://github.com/MugheesHiader476/CivicPulse/issues/18), PR [#19 protected release](https://github.com/MugheesHiader476/CivicPulse/pull/19): Faseeh authored it; Mughees reviews the final green SHA; awaiting approval.
 
 The real conflict occurred between PR #13's negative-lookaround matcher and PR #15's competing
 token-scoring implementation. Git reported `UU` for production code and `AA` for its test. The team
@@ -202,6 +207,5 @@ explaining, and modifying every submitted line.
 - Fresh-clone Compose: verified healthy.
 - Application, cache, validation, rate-limit, Kubernetes, HPA, and VPA evidence: captured.
 - Protected red-to-green CI: captured and green.
-- Partner approval, merged-main CD, GHCR packages, release/SBOM capture, and video URL: completed
-  after Mughees returns and approves the current protected PR.
-- Final PDF is rendered and visually checked only after those real post-merge links are available.
+- Partner approval, merged-main CD, GHCR packages, release/SBOM capture, and video URL: completed after Mughees returns and approves the current protected PR.
+- This draft PDF is rendered and visually checked; the submission PDF replaces its placeholders after those real post-merge links are available.
