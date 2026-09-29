@@ -120,6 +120,13 @@ PVC, Redis deployment and PVC, migration Job, replicated frontend/backend Deploy
 requests/limits, Services, Ingress, HPA, recommendation-only VPA, and a PodDisruptionBudget.
 Development and production overlays render from the same base.
 
+The demonstrated local cluster is `kind-civicpulse`: one named kind (Kubernetes in Docker) cluster
+running on Docker Desktop. Consistent `app.kubernetes.io` labels and matching selectors connect
+Deployments, pods, and Services to the intended workloads. PostgreSQL and Redis use PVC-backed
+storage, so data survives pod deletion and recreation. Because this is a disposable local kind
+cluster rather than an external managed storage service, deleting the entire cluster is outside
+that durability guarantee.
+
 ![Running Kubernetes resources, Ingress, storage, and HPA](evidence/k8s-resources.png)
 
 The real load test sent 150,559 requests with zero failures, average latency 90.81 ms, p95 252.38
@@ -134,11 +141,11 @@ recommended a 977m CPU target and 250Mi memory target during the measured load.
 
 ## 7. Collaboration and Git evidence
 
-Before this report design update, the source-branch history contained 66 commits: 41 by Faseeh and
-25 by Mughees (approximately 62.1% / 37.9%), so both partners remained above the required 35%
-share. The report-design commit brings the history to 67 commits: 42 by Faseeh and 25 by Mughees
-(approximately 62.7% / 37.3%). `.mailmap` combines Faseeh's two verified email identities without
-rewriting history.
+Before the report work, the source-branch history contained 65 commits: 40 by Faseeh and 25 by
+Mughees (approximately 61.5% / 38.5%). The three meaningful report commits bring the history to 68
+commits: 43 by Faseeh and 25 by Mughees (approximately 63.2% / 36.8%), so both partners remain above
+the required 35% share. `.mailmap` combines Faseeh's two verified email identities without rewriting
+history.
 
 At least five issue-linked PRs contain substantive partner review:
 
