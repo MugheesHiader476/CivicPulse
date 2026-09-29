@@ -173,6 +173,11 @@ both push and pull-request test jobs were red. The failure was then removed in t
 rewriting history. All lint/type, backend/frontend test, manifest, build, integration, Trivy scan,
 and SonarCloud checks passed afterward.
 
+The final documented `dev` SHA (`ee0d199`) passed both the
+[pull-request CI run](https://github.com/MugheesHiader476/CivicPulse/actions/runs/36563038922)
+and the independent [push CI run](https://github.com/MugheesHiader476/CivicPulse/actions/runs/36563033496).
+Both runs completed successfully across all required jobs.
+
 ![Required failure blocks the merge](evidence/blocked-merge.png)
 
 ![Same pull request after the repair](evidence/green-pipeline.png)
