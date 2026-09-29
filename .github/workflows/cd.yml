@@ -186,7 +186,10 @@ jobs:
             refs/tags/vertical-pod-autoscaler-1.7.1:refs/tags/vertical-pod-autoscaler-1.7.1
           git -C "$RUNNER_TEMP/autoscaler" checkout --detach \
             refs/tags/vertical-pod-autoscaler-1.7.1
-          "$RUNNER_TEMP/autoscaler/vertical-pod-autoscaler/hack/vpa-up.sh"
+          (
+            cd "$RUNNER_TEMP/autoscaler"
+            ./vertical-pod-autoscaler/hack/vpa-up.sh
+          )
           kubectl wait -n ingress-nginx --for=condition=Ready pod \
             -l app.kubernetes.io/component=controller --timeout=180s
           kubectl rollout status -n kube-system deployment/metrics-server --timeout=180s

@@ -39,7 +39,10 @@ git -C /tmp/autoscaler remote add origin https://github.com/kubernetes/autoscale
 git -C /tmp/autoscaler fetch --depth 1 origin \
   refs/tags/vertical-pod-autoscaler-1.7.1:refs/tags/vertical-pod-autoscaler-1.7.1
 git -C /tmp/autoscaler checkout --detach refs/tags/vertical-pod-autoscaler-1.7.1
-/tmp/autoscaler/vertical-pod-autoscaler/hack/vpa-up.sh
+(
+  cd /tmp/autoscaler
+  ./vertical-pod-autoscaler/hack/vpa-up.sh
+)
 ```
 
 For local images, build and load the tags referenced by the dev overlay:
