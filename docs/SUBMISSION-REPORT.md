@@ -168,8 +168,9 @@ run 1 had concentrated all traffic on one pod.
 
 ## 7. Collaboration and Git evidence
 
-The final repository history contains 74 commits across all refs: 46 by Faseeh and 28 by Mughees
-(approximately 62.2% / 37.8%), so both partners remain above the required 35% share. `.mailmap`
+Before the final promotion merge, the repository history contains 80 commits across all refs: 51
+by Faseeh and 29 by Mughees (approximately 63.8% / 36.3%), so both partners remain above the
+required 35% share. `.mailmap`
 combines Faseeh's two verified email identities without rewriting history.
 
 Six early bootstrap commits (24-26 September: initial frontend, backend, login, CodeQL, and two
