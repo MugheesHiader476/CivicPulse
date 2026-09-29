@@ -33,8 +33,12 @@ Install VPA 1.7.1 from the official release so the committed `VerticalPodAutosca
 a CRD and a recommender:
 
 ```bash
-git clone --depth 1 --branch vertical-pod-autoscaler-1.7.1 \
-  https://github.com/kubernetes/autoscaler.git /tmp/autoscaler
+mkdir -p /tmp/autoscaler
+git -C /tmp/autoscaler init
+git -C /tmp/autoscaler remote add origin https://github.com/kubernetes/autoscaler.git
+git -C /tmp/autoscaler fetch --depth 1 origin \
+  refs/tags/vertical-pod-autoscaler-1.7.1:refs/tags/vertical-pod-autoscaler-1.7.1
+git -C /tmp/autoscaler checkout --detach refs/tags/vertical-pod-autoscaler-1.7.1
 /tmp/autoscaler/vertical-pod-autoscaler/hack/vpa-up.sh
 ```
 
